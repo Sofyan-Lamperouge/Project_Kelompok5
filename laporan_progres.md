@@ -12,11 +12,14 @@ Tugas PM
 2. Konfirmasi Bukti
 
 <img src="repo.png">
-<video controls src="expo.mp4">
+<video controls src="expo.mp4"> </video>
 
 Tugas Member
 1. Accept invitation dan clone project
 2. Konfirmasi Bukti
+ - Faiz Alfaresi
+ ![alt text](image.png)
 
 Diskusi Penentuan Tema
 Catatan Diskusi
+- Rental PS (Faiz Alfaresi)
