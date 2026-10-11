@@ -43,7 +43,7 @@ No	Bukti	Keterangan
 
 Diskusi Penentuan Tema
 Catatan Diskusi
-Ada beberapa tema yang ingin kami jadikan sebagai project UTS dan UAS
+Ada beberapa tema yang ingin kami jadikan sebagai project UTS dan UAS yaitu:
 - Rental PS
 - Sistem Mahad
 - Sistem Parkir
