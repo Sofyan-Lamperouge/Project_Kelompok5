@@ -41,6 +41,16 @@ No	Bukti	Keterangan
 4	[<img width="959" height="509" alt="Screenshot 2026-10-11 212953" src="https://github.com/user-attachments/assets/a9d7fc92-2708-4cb9-b295-9e494c1203fa" />
 ]	Project berhasil dijalankan di localhost:8081
 
+Progres Pengembangan 1 Tugas Member
+
+Nama: Nisa Naila
+Tugas: Accept Invitation dan Clone Project
+
+1. Accept invitation, Konfirmasi Bukti
+   <img width="734" height="359" alt="Cuplikan layar 2026-10-11 221003" src="https://github.com/user-attachments/assets/cdd12210-8497-4f88-81cb-f8bbaea91279" />
+2. Clone Project, Konfirmasi Bukti
+   <img width="434" height="479" alt="Cuplikan layar 2026-10-11 223544" src="https://github.com/user-attachments/assets/9708af7f-c287-4f89-b8bb-f58039346fc5" />
+
 Diskusi Penentuan Tema
 Catatan Diskusi
 Ada beberapa tema yang ingin kami jadikan sebagai project UTS dan UAS
