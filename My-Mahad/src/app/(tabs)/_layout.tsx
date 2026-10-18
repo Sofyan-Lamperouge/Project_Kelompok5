@@ -47,11 +47,12 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <Ionicons name="document-text" size={24} color={color} />,
           }}
         />
+        {/* TAB KELUAR DIGANTI MENJADI PROFIL */}
         <Tabs.Screen
-          name="keluar"
+          name="profil"
           options={{
-            title: 'Keluar',
-            tabBarIcon: ({ color }) => <Ionicons name="log-out" size={24} color={color} />,
+            title: 'Profil',
+            tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
           }}
         />
       </Tabs>
