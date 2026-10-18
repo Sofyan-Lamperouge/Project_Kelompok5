@@ -32,8 +32,18 @@
 8. Absensi kegiatan Ma'had masih semi aplikasi 
 
 ### Pembagian Tugas ###
+
+1. Mohammad Sofyan Nurseha (Halaman Beranda)
+2. Faiz Alfaresi (Halaman Register)
+3. Ashfahani Hasyim (Halaman Profil)
+4. Nisa Naila (Halaman Login)
+
 Ashfahani Hasyim Telah melakukan Penambahan halaman profil dan memperbaiki navigasi tab
 
 ![alt text](<Screenshot 2026-10-18 162404.png>)
 
 ### Hasil Halaman ###
+
+1. Mohammad Sofyan Nurseha (Halaman Beranda)
+
+<img src="dokumentasi\beranda.gif" width="50%" >
