@@ -32,6 +32,8 @@
 8. Absensi kegiatan Ma'had masih semi aplikasi 
 
 ### Pembagian Tugas ###
+Ashfahani Hasyim Telah melakukan Penambahan halaman profil dan memperbaiki navigasi tab
 
+![alt text](<Screenshot 2026-10-18 162404.png>)
 
 ### Hasil Halaman ###
