@@ -38,12 +38,16 @@
 3. Ashfahani Hasyim (Halaman Profil)
 4. Nisa Naila (Halaman Login)
 
-Ashfahani Hasyim Telah melakukan Penambahan halaman profil dan memperbaiki navigasi tab
-
-![alt text](<Screenshot 2026-10-18 162404.png>)
-
 ### Hasil Halaman ###
 
 1. Mohammad Sofyan Nurseha (Halaman Beranda)
 
 <img src="dokumentasi\beranda.gif" width="50%" >
+
+2. Ashfahani Hasyim (Penambahan halaman profil dan memperbaiki navigasi tab)
+
+<img src="dokumentasi\Profil.png" width="50%" >
+
+3. Nisa Naila (Membuat tampilan Login)
+
+<img src="dokumentasi\Login.png" width="50%" >
