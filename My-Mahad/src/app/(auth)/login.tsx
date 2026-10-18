@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
@@ -14,8 +13,9 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// PERBAIKAN: Naik 2 folder (../../) untuk ke src/styles/colors
+// Naik 2 folder (../../) untuk ke src/styles
 import { Colors } from '../../styles/colors';
+import { authStyles as styles } from '../../styles/auth.styles';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -40,9 +40,9 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      
+
       // Simulasi loading (karena belum pakai API/AsyncStorage)
-      await new Promise((r) => setTimeout(r, 1200)); 
+      await new Promise((r) => setTimeout(r, 1200));
 
       // Berhasil → masuk ke tab utama
       router.replace('/(tabs)/beranda');
@@ -141,7 +141,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.loginBtn, loading && { opacity: 0.7 }]}
+              style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
               onPress={handleLogin}
               disabled={loading}
             >
@@ -154,7 +154,7 @@ export default function LoginScreen() {
                     size={20}
                     color={Colors.background}
                   />
-                  <Text style={styles.loginBtnText}>Masuk</Text>
+                  <Text style={styles.primaryBtnText}>Masuk</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -171,9 +171,7 @@ export default function LoginScreen() {
           <View style={styles.footer}>
             <Text style={styles.footerText}>Belum punya akun?</Text>
             <TouchableOpacity
-              onPress={() => {
-                /* TODO: navigasi ke register */
-              }}
+              onPress={() => router.push('/(auth)/register')}
             >
               <Text style={styles.footerLink}> Daftar di sini</Text>
             </TouchableOpacity>
@@ -185,137 +183,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scroll: {
-    flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  logoWrap: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.cardBgLight,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: Colors.cardBg,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.cardBgLight,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 52,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.cardBgLight,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-  },
-  error: {
-    color: '#E53935',
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 16,
-  },
-  forgotText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  loginBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    height: 52,
-    borderRadius: 12,
-    gap: 8,
-  },
-  loginBtnText: {
-    color: Colors.background,
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-    gap: 12,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.cardBgLight,
-  },
-  orText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  footerLink: {
-    fontSize: 13,
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  version: {
-    textAlign: 'center',
-    fontSize: 10,
-    color: Colors.textSecondary,
-    marginTop: 32,
-  },
-});
