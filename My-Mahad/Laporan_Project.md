@@ -51,3 +51,7 @@
 3. Nisa Naila (Membuat tampilan Login)
 
 <img src="dokumentasi\Login.png" width="50%" >
+
+4. Faiz Alfaresi (Membuat register page)
+
+<img src="dokumentasi\Register.png" width="50%" >
