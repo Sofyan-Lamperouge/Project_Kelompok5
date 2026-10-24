@@ -10,7 +10,7 @@ export default function ProfilScreen() {
       
       {/* HEADER PROFIL */}
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={styles.avatarLarge}>
             <Text style={styles.avatarTextLarge}>AF</Text>
           </View>
