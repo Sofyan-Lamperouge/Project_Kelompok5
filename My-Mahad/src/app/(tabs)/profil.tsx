@@ -1,199 +1,381 @@
-import React from 'react';
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  ScrollView, View, Text, TouchableOpacity, StyleSheet, FlatList, 
+  Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// Pastikan path ini sesuai dengan letak file colors Anda
-import { Colors } from '../../styles/colors'; 
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfilScreen() {
+  const router = useRouter();
+
+  // Data User
+  const [nama, setNama] = useState('Ahmad Fauzan');
+  const [nim, setNim] = useState('2301010012');
+  const [password, setPassword] = useState('password123');
+  const [fotoProfil, setFotoProfil] = useState<string | null>(null);
+
+  // State Modal Edit & Password
+  const [modalEditVisible, setModalEditVisible] = useState(false);
+  const [tempNama, setTempNama] = useState(nama);
+  const [tempNim, setTempNim] = useState(nim);
+
+  const [modalPassVisible, setModalPassVisible] = useState(false);
+  const [passLama, setPassLama] = useState('');
+  const [passBaru, setPassBaru] = useState('');
+
+  // State Modal Lihat Foto
+  const [modalFotoVisible, setModalFotoVisible] = useState(false);
+
+  // Fungsi Pilih Foto
+  const pickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert("Izin Ditolak", "Anda harus mengizinkan akses galeri.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true, 
+        aspect: [1, 1],
+        quality: 0.8, 
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setFotoProfil(result.assets[0].uri);
+        setModalFotoVisible(false); 
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+    }
+  };
+
+  // FUNGSI HAPUS FOTO (Diperbaiki: Langsung hapus tanpa Alert agar jalan di Web)
+  const hapusFoto = () => {
+    setFotoProfil(null); // Set foto menjadi null (kembali ke inisial)
+    setModalFotoVisible(false); // Tutup modal
+  };
+
+  // Fungsi Simpan Data
+  const handleSaveProfil = () => {
+    setNama(tempNama);
+    setNim(tempNim);
+    setModalEditVisible(false);
+    Alert.alert("Berhasil", "Profil diperbarui!");
+  };
+
+  const handleSavePassword = () => {
+    if (passLama !== password) return Alert.alert("Error", "Password lama salah!");
+    if (passBaru.length < 6) return Alert.alert("Error", "Minimal 6 karakter!");
+    setPassword(passBaru);
+    setModalPassVisible(false);
+    setPassLama(''); setPassBaru('');
+    Alert.alert("Berhasil", "Password diubah!");
+  };
+
+  // Data Menu
+  const MENU_ITEMS = [
+    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: () => setModalEditVisible(true) },
+    { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
+  ];
+
+  const renderMenuItem = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={item.action}>
+      <View style={styles.menuIconContainer}>
+        <Ionicons name={item.icon} size={22} color="#0A704A" />
+      </View>
+      <View style={styles.menuTextContainer}>
+        <Text style={styles.menuTitle}>{item.title}</Text>
+        <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#1E293B" />
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      
-      {/* HEADER PROFIL */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarTextLarge}>AF</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        
+        {/* HEADER HIJAU */}
+        <View style={styles.headerBackground}>
+          <Text style={styles.headerTitle}>Profil</Text>
+          
+          <View style={styles.profileInfo}>
+            <View style={styles.avatarWrapper}>
+              
+              <TouchableOpacity 
+                style={styles.avatarCircle} 
+                onPress={() => fotoProfil ? setModalFotoVisible(true) : pickImage()}
+              >
+                {fotoProfil ? (
+                  <Image source={{ uri: fotoProfil }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{nama.substring(0, 2).toUpperCase()}</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
+                <Ionicons name="camera" size={14} color="#0A704A" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.profileName}>{nama}</Text>
+            <Text style={styles.profileNim}>NIM {nim}</Text>
           </View>
-          <View style={{ marginLeft: 15, flex: 1 }}>
-            <Text style={styles.profileName}>Ahmad Fauzi</Text>
-            <Text style={styles.profileSub}>NIM: 2026012345</Text>
-            <Text style={styles.profileSub}>Teknik Informatika</Text>
+        </View>
+
+        {/* AREA KONTEN PUTIH */}
+        <View style={styles.contentContainer}>
+          
+          <View style={styles.cardContainer}>
+            <FlatList
+              data={MENU_ITEMS}
+              keyExtractor={(item) => item.id}
+              renderItem={renderMenuItem}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={styles.divider} />}
+            />
           </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="create-outline" size={24} color={Colors.primary} />
+
+          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/login')}>
+            <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* SECTION: INFORMASI AKADEMIK */}
-      <Text style={styles.sectionTitle}>INFORMASI AKADEMIK</Text>
-      <View style={styles.card}>
-        <View style={styles.infoRow}>
-          <Ionicons name="school-outline" size={22} color={Colors.primary} />
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoLabel}>Fakultas</Text>
-            <Text style={styles.infoValue}>Sains dan Teknologi</Text>
+          <View style={styles.mosqueIllustration}>
+             <Image 
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/862/862826.png' }} 
+                style={styles.mosqueImage} 
+             />
           </View>
+
+          <View style={{ height: 120 }} />
         </View>
-        <View style={styles.divider} />
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="book-outline" size={22} color={Colors.primary} />
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoLabel}>Program Studi</Text>
-            <Text style={styles.infoValue}>Teknik Informatika</Text>
+      </ScrollView>
+
+      {/* ========================================== */}
+      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI   */}
+      {/* ========================================== */}
+      <Modal visible={modalFotoVisible} transparent={true} animationType="fade">
+        <View style={styles.fullImageContainer}>
+          
+          <TouchableOpacity 
+            style={styles.closeImageButton} 
+            onPress={() => setModalFotoVisible(false)}
+          >
+            <Ionicons name="close" size={30} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          {fotoProfil && (
+            <Image 
+              source={{ uri: fotoProfil }} 
+              style={styles.fullImage} 
+              resizeMode="contain" 
+            />
+          )}
+
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={pickImage}>
+              <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Ganti Foto</Text>
+            </TouchableOpacity>
+
+            {/* TOMBOL HAPUS FOTO */}
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#EF4444' }]} onPress={hapusFoto}>
+              <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Hapus Foto</Text>
+            </TouchableOpacity>
           </View>
+
         </View>
-        <View style={styles.divider} />
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={22} color={Colors.primary} />
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoLabel}>Tahun Angkatan</Text>
-            <Text style={styles.infoValue}>2026</Text>
+      </Modal>
+
+      {/* MODAL EDIT PROFIL */}
+      <Modal visible={modalEditVisible} animationType="slide" transparent={true}>
+        <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profil</Text>
+              <TouchableOpacity onPress={() => setModalEditVisible(false)}>
+                <Ionicons name="close" size={24} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.label}>Nama Lengkap</Text>
+            <TextInput style={styles.input} value={tempNama} onChangeText={setTempNama} />
+            <Text style={styles.label}>NIM</Text>
+            <TextInput style={styles.input} value={tempNim} onChangeText={setTempNim} keyboardType="numeric" />
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfil}>
+              <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
-      {/* SECTION: PENGATURAN */}
-      <Text style={styles.sectionTitle}>PENGATURAN APLIKASI</Text>
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.menuRow}>
-          <Ionicons name="lock-closed-outline" size={22} color={Colors.textSecondary} />
-          <Text style={styles.menuText}>Ubah Kata Sandi</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-        </TouchableOpacity>
-        <View style={styles.divider} />
-        
-        <TouchableOpacity style={styles.menuRow}>
-          <Ionicons name="notifications-outline" size={22} color={Colors.textSecondary} />
-          <Text style={styles.menuText}>Notifikasi</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-        </TouchableOpacity>
-        <View style={styles.divider} />
-        
-        <TouchableOpacity style={styles.menuRow}>
-          <Ionicons name="help-circle-outline" size={22} color={Colors.textSecondary} />
-          <Text style={styles.menuText}>Bantuan & FAQ</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
+      {/* MODAL UBAH PASSWORD */}
+      <Modal visible={modalPassVisible} animationType="slide" transparent={true}>
+        <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ubah Password</Text>
+              <TouchableOpacity onPress={() => setModalPassVisible(false)}>
+                <Ionicons name="close" size={24} color="#1E293B" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.label}>Password Lama</Text>
+            <TextInput style={styles.input} secureTextEntry value={passLama} onChangeText={setPassLama} />
+            <Text style={styles.label}>Password Baru</Text>
+            <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} />
+            <TouchableOpacity style={styles.saveButton} onPress={handleSavePassword}>
+              <Text style={styles.saveButtonText}>Simpan Password</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
-      {/* TOMBOL KELUAR */}
-      <TouchableOpacity style={styles.logoutButton}>
-        <Ionicons name="log-out-outline" size={20} color={Colors.danger} style={{ marginRight: 8 }} />
-        <Text style={styles.logoutText}>Keluar Akun</Text>
-      </TouchableOpacity>
-
-      {/* Spacer agar tidak tertutup tab bar melayang */}
-      <View style={{ height: 100 }} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  headerBackground: {
+    backgroundColor: '#0A704A', 
+    height: 280, 
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingTop: 70,
+    alignItems: 'center',
   },
-  header: {
-    padding: 20,
-    marginTop: 30,
-    marginBottom: 10,
+  headerTitle: {
+    position: 'absolute',
+    top: 60,
+    left: 25,
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '500',
   },
-  avatarLarge: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: Colors.primary, // Warna Emas
+  profileInfo: { alignItems: 'center', marginTop: 10 },
+  avatarWrapper: { position: 'relative', marginBottom: 12 },
+  avatarCircle: {
+    width: 95,
+    height: 95,
+    borderRadius: 50,
+    backgroundColor: '#E2E8F0', 
+    borderWidth: 3,
+    borderColor: '#FFFFFF', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { color: '#0A704A', fontSize: 32, fontWeight: 'bold' },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: '#FFFFFF',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarTextLarge: {
-    color: Colors.background, // Teks gelap di atas Emas
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  profileName: {
-    color: Colors.textPrimary,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  profileSub: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    marginTop: 2,
-  },
-  editButton: {
-    padding: 10,
-    backgroundColor: Colors.cardBgLight,
-    borderRadius: 10,
-  },
-  sectionTitle: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginTop: 15,
-    marginBottom: 10,
-    marginHorizontal: 20,
-  },
-  card: {
-    backgroundColor: Colors.cardBg, // Hijau gelap
+  profileName: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
+  profileNim: { color: '#FFFFFF', fontSize: 14, opacity: 0.9 },
+  contentContainer: { marginTop: -30, paddingHorizontal: 25 },
+  cardContainer: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 15,
-    marginHorizontal: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 5,
+    paddingVertical: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#F1F5F9', 
   },
-  infoRow: {
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 15 },
+  menuIconContainer: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#E8F5E9', 
+    justifyContent: 'center', alignItems: 'center', marginRight: 15,
+  },
+  menuTextContainer: { flex: 1 },
+  menuTitle: { color: '#1E293B', fontSize: 15, fontWeight: 'bold' },
+  menuSubtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#E2E8F0', marginLeft: 70 },
+  logoutButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#EF4444', marginTop: 20, padding: 14, borderRadius: 10,
+  },
+  logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: '500' },
+  
+  mosqueIllustration: { alignItems: 'center', marginTop: 20 },
+  mosqueImage: { width: 250, height: 150, opacity: 0.1, resizeMode: 'contain' },
+
+  fullImageContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeImageButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  fullImage: {
+    width: '100%',
+    height: '70%', 
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    position: 'absolute',
+    bottom: 50,
+  },
+  actionButton: {
+    backgroundColor: '#0A704A', 
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 25,
   },
-  infoTextContainer: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  infoLabel: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  infoValue: {
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-  },
-  menuText: {
-    flex: 1,
-    color: Colors.textPrimary,
-    fontSize: 15,
-    marginLeft: 15,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)', // Merah transparan
-    marginHorizontal: 20,
-    marginTop: 30,
-    padding: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  logoutText: {
-    color: Colors.danger,
-    fontSize: 16,
+  actionButtonText: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 14,
   },
+  modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 25,
+    paddingBottom: 40,
+    minHeight: 300,
+  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
+  label: { fontSize: 14, color: '#1E293B', marginBottom: 5, fontWeight: '600' },
+  input: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    color: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
+  },
+  saveButton: { backgroundColor: '#0A704A', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });

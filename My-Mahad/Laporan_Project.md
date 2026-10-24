@@ -55,3 +55,13 @@
 4. Faiz Alfaresi (Membuat register page)
 
 <img src="dokumentasi\Register.png" width="50%" >
+
+### Link Demo & Video ###
+1. Ashfahani Hasyim ( Menampilkan halaman profil sesuai desain)
+<video controls src="20261024-1327-43.7342686-1.mp4" title="Title"></video>
+
+### Teknologi yang Digunakan ###
+* React Native dengan Expo (Expo Router)
+* Styling menggunakan React Native StyleSheet
+* Ikon dari `@expo/vector-icons` (Ionicons)
+* Fitur perangkat: `expo-image-picker` (Upload Foto Profil)
