@@ -25,27 +25,38 @@ export default function ProfilScreen() {
   const [passLama, setPassLama] = useState('');
   const [passBaru, setPassBaru] = useState('');
 
-  // State Modal Lihat Foto (Fitur Baru)
+  // State Modal Lihat Foto
   const [modalFotoVisible, setModalFotoVisible] = useState(false);
 
   // Fungsi Pilih Foto
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      Alert.alert("Izin Ditolak", "Anda harus mengizinkan akses galeri.");
-      return;
-    }
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert("Izin Ditolak", "Anda harus mengizinkan akses galeri.");
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, 
-      aspect: [1, 1], // Tetap crop 1:1 untuk avatar di pojok
-      quality: 0.8, 
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true, 
+        aspect: [1, 1],
+        quality: 0.8, 
+      });
 
-    if (!result.canceled) {
-      setFotoProfil(result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setFotoProfil(result.assets[0].uri);
+        setModalFotoVisible(false); 
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
     }
+  };
+
+  // FUNGSI HAPUS FOTO (Diperbaiki: Langsung hapus tanpa Alert agar jalan di Web)
+  const hapusFoto = () => {
+    setFotoProfil(null); // Set foto menjadi null (kembali ke inisial)
+    setModalFotoVisible(false); // Tutup modal
   };
 
   // Fungsi Simpan Data
@@ -95,7 +106,6 @@ export default function ProfilScreen() {
           <View style={styles.profileInfo}>
             <View style={styles.avatarWrapper}>
               
-              {/* Avatar bisa di-klik untuk lihat full */}
               <TouchableOpacity 
                 style={styles.avatarCircle} 
                 onPress={() => fotoProfil ? setModalFotoVisible(true) : pickImage()}
@@ -135,7 +145,6 @@ export default function ProfilScreen() {
             <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
 
-          {/* ILUSTRASI MASJID BARU (Lebih Presisi) */}
           <View style={styles.mosqueIllustration}>
              <Image 
                 source={{ uri: 'https://cdn-icons-png.flaticon.com/512/862/862826.png' }} 
@@ -148,10 +157,11 @@ export default function ProfilScreen() {
       </ScrollView>
 
       {/* ========================================== */}
-      {/* MODAL LIHAT FOTO FULL */}
+      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI   */}
       {/* ========================================== */}
       <Modal visible={modalFotoVisible} transparent={true} animationType="fade">
         <View style={styles.fullImageContainer}>
+          
           <TouchableOpacity 
             style={styles.closeImageButton} 
             onPress={() => setModalFotoVisible(false)}
@@ -163,9 +173,23 @@ export default function ProfilScreen() {
             <Image 
               source={{ uri: fotoProfil }} 
               style={styles.fullImage} 
-              resizeMode="contain" // Agar tidak terpotong
+              resizeMode="contain" 
             />
           )}
+
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={pickImage}>
+              <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Ganti Foto</Text>
+            </TouchableOpacity>
+
+            {/* TOMBOL HAPUS FOTO */}
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#EF4444' }]} onPress={hapusFoto}>
+              <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Hapus Foto</Text>
+            </TouchableOpacity>
+          </View>
+
         </View>
       </Modal>
 
@@ -290,14 +314,12 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: '500' },
   
-  // Gambar Masjid
   mosqueIllustration: { alignItems: 'center', marginTop: 20 },
   mosqueImage: { width: 250, height: 150, opacity: 0.1, resizeMode: 'contain' },
 
-  // Modal Full Image
   fullImageContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.9)', // Background hitam pekat
+    backgroundColor: 'rgba(0,0,0,0.95)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -310,10 +332,29 @@ const styles = StyleSheet.create({
   },
   fullImage: {
     width: '100%',
-    height: '80%',
+    height: '70%', 
   },
-
-  // Modal Form
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    position: 'absolute',
+    bottom: 50,
+  },
+  actionButton: {
+    backgroundColor: '#0A704A', 
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 25,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 14,
+  },
   modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: '#FFFFFF',
