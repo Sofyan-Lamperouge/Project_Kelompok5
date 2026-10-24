@@ -58,7 +58,7 @@
 
 ### Link Demo & Video ###
 1. Ashfahani Hasyim ( Menampilkan halaman profil sesuai desain)
-![alt text](profil.gif)
+<video controls src="20261024-1327-43.7342686-1.mp4" title="Title"></video>
 
 ### Teknologi yang Digunakan ###
 * React Native dengan Expo (Expo Router)
