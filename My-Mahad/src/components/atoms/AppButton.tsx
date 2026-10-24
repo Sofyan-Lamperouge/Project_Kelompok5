@@ -1,5 +1,5 @@
 import React from 'react';
-import { PressableProps, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { ActivityIndicator, PressableProps, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Gradients } from '../../styles/colors';
@@ -16,9 +16,12 @@ interface AppButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   /** Kosongkan label + isi iconName → tombol ikon bulat. */
   label?: string;
   iconName?: IconName;
+  iconPosition?: 'left' | 'right';
   variant?: Variant;
   size?: Size;
   fullWidth?: boolean;
+  /** Menampilkan spinner dan menonaktifkan tombol. */
+  loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -27,28 +30,39 @@ const HEIGHT: Record<Size, number> = { sm: 40, md: 52 };
 export function AppButton({
   label,
   iconName,
+  iconPosition = 'right',
   variant = 'primary',
   size = 'md',
   fullWidth = false,
+  loading = false,
+  disabled,
   style,
   accessibilityLabel,
   ...rest
 }: AppButtonProps) {
   const height = HEIGHT[size];
   const round = !label && !!iconName;
+  const inactive = loading || !!disabled;
   const onDark = variant === 'primary' || variant === 'glass';
   const contentColor = onDark ? Colors.textLight : Colors.textPrimary;
+
+  const icon = iconName ? (
+    <MaterialCommunityIcons name={iconName} size={size === 'sm' ? 20 : 22} color={contentColor} />
+  ) : null;
 
   return (
     <PressableScale
       {...rest}
+      disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: inactive, busy: loading }}
       style={[
         { height, borderRadius: Radius.pill },
         round ? { width: height } : fullWidth && { alignSelf: 'stretch' },
         variant === 'gold' && Shadow.gold,
         variant === 'primary' && Shadow.soft,
+        inactive && !loading && { opacity: 0.6 },
         style,
       ]}
       contentStyle={[styles.content, { height, borderRadius: Radius.pill, paddingHorizontal: round ? 0 : 22 }]}
@@ -67,12 +81,20 @@ export function AppButton({
           style={StyleSheet.absoluteFill}
         />
       )}
-      {label ? (
-        <AppText weight="bold" style={{ color: contentColor, fontSize: 14, letterSpacing: 0.3 }}>
-          {label}
-        </AppText>
-      ) : null}
-      {iconName ? <MaterialCommunityIcons name={iconName} size={size === 'sm' ? 20 : 22} color={contentColor} /> : null}
+
+      {loading ? (
+        <ActivityIndicator color={contentColor} />
+      ) : (
+        <>
+          {iconPosition === 'left' ? icon : null}
+          {label ? (
+            <AppText weight="bold" style={{ color: contentColor, fontSize: 15, letterSpacing: 0.3 }}>
+              {label}
+            </AppText>
+          ) : null}
+          {iconPosition === 'right' ? icon : null}
+        </>
+      )}
     </PressableScale>
   );
 }
