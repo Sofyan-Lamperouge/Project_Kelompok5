@@ -1,89 +1,92 @@
+import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../styles/colors';
+import { useTabBarHeight } from '../../hooks/use-tab-bar-offset';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassView } from '../../components/atoms/GlassView';
+import { TabBarIcon } from '../../components/molecules/TabBarIcon';
+
+type IconProps = { focused: boolean; color: string; size: number };
 
 export default function TabLayout() {
-  return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: Colors.cardBg,
-            borderTopWidth: 0,
-            height: 70,
-            paddingBottom: 10,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-          },
-          tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: Colors.textSecondary,
-          tabBarLabelStyle: { fontSize: 10, fontWeight: 'bold' },
-        }}
-      >
-        <Tabs.Screen
-          name="beranda"
-          options={{
-            title: 'Beranda',
-            tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="reservasi"
-          options={{
-            title: 'Reservasi',
-            tabBarIcon: ({ color }) => <Ionicons name="calendar" size={24} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="status"
-          options={{
-            title: 'Status',
-            tabBarIcon: ({ color }) => <Ionicons name="document-text" size={24} color={color} />,
-          }}
-        />
-        {/* TAB KELUAR DIGANTI MENJADI PROFIL */}
-        <Tabs.Screen
-          name="profil"
-          options={{
-            title: 'Profil',
-            tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
-          }}
-        />
-      </Tabs>
+  const height = useTabBarHeight();
+  const { bottom } = useSafeAreaInsets();
 
-      {/* Tombol Melayang */}
-      <View style={styles.floatingBtnContainer} pointerEvents="box-none">
-        <TouchableOpacity style={styles.floatingBtn}>
-          <Ionicons name="arrow-down" size={24} color={Colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-    </View>
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
+        // Tab bar rata penuh di dasar layar; latar kaca disediakan oleh tabBarBackground
+        tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height,
+          paddingTop: 8,
+          paddingBottom: Math.max(bottom, 8),
+          borderTopWidth: 0,
+          backgroundColor: 'transparent',
+          elevation: 0,
+        },
+        tabBarBackground: () => (
+          <GlassView
+            intensity={80}
+            overlayColor="rgba(255,255,255,0.9)"
+            style={[StyleSheet.absoluteFill, styles.glass]}
+          />
+        ),
+      }}
+    >
+      <Tabs.Screen
+        name="beranda"
+        options={{
+          title: 'Beranda',
+          tabBarIcon: ({ focused, color, size }: IconProps) => (
+            <TabBarIcon active="home" inactive="home-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="reservasi"
+        options={{
+          title: 'Reservasi',
+          tabBarIcon: ({ focused, color, size }: IconProps) => (
+            <TabBarIcon active="calendar" inactive="calendar-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="pengaduan"
+        options={{
+          title: 'Pengaduan',
+          tabBarIcon: ({ focused, color, size }: IconProps) => (
+            <TabBarIcon active="chatbubble-ellipses" inactive="chatbubble-ellipses-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profil"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ focused, color, size }: IconProps) => (
+            <TabBarIcon active="person" inactive="person-outline" focused={focused} color={color} size={size} />
+          ),
+        }}
+      />
+      {/* Disembunyikan dari tab bar (tetap bisa diakses lewat router) */}
+      <Tabs.Screen name="keluar" options={{ href: null }} />
+    </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  floatingBtnContainer: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  floatingBtn: {
-    backgroundColor: Colors.cardBgLight,
-    width: 55,
-    height: 55,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: Colors.background,
+  glass: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
   },
 });
