@@ -1,99 +1,54 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
-import { styles } from '../../styles/beranda.styles';
+import { useTabBarOffset } from '../../hooks/use-tab-bar-offset';
+import { FadeInView } from '../../components/atoms/FadeInView';
+import { HeroBanner } from '../../components/molecules/HeroBanner';
+import { BerandaHeader, HEADER_OVERLAP } from '../../components/organisms/BerandaHeader';
+import { LayananUtamaGrid } from '../../components/organisms/LayananUtamaGrid';
+import { KapasitasGedungRow } from '../../components/organisms/KapasitasGedungRow';
 
 export default function BerandaScreen() {
+  const router = useRouter();
+  const bottomPadding = useTabBarOffset();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background, paddingTop: Platform.OS === 'android' ? 40 : 0 }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={styles.avatar}><Text style={styles.avatarText}>M</Text></View>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.greeting}>Assalamu'alaikum,</Text>
-              <Text style={styles.subGreeting}>Ahmad Fauzi</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.bellIconContainer}>
-            <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
-            <View style={styles.bellDot} />
-          </TouchableOpacity>
-        </View>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: bottomPadding }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Menutup area "overscroll" iOS di atas header agar tetap hijau */}
+      <View style={styles.overscroll} />
 
-        {/* BANNER RESERVASI */}
-        <View style={styles.banner}>
-          <View style={styles.bannerTopRow}>
-            <Text style={styles.bannerPeriod}>PERIODE ASRAMA 2026/2027</Text>
-            <View style={styles.bannerBadge}><Text style={styles.bannerBadgeText}>Belum Memilih Kamar</Text></View>
-          </View>
-          
-          {/* Ikon Masjid di tengah banner */}
-          <MaterialCommunityIcons name="mosque" size={50} color={Colors.primary} style={{marginBottom: 10}} />
-          
-          <Text style={styles.bannerTitle}>Reservasi Kamar Ma'had</Text>
-          <Text style={styles.bannerDesc}>Tersedia 200 Kamar di Gedung Jadid & Gedung Qodim dengan fasilitas lengkap.</Text>
-          <TouchableOpacity style={styles.bannerButton}>
-            <MaterialCommunityIcons name="door-open" size={18} color={Colors.background} />
-            <Text style={styles.bannerButtonText}>Mulai Reservasi</Text>
-          </TouchableOpacity>
-        </View>
+      <FadeInView distance={-16} duration={500}>
+        <BerandaHeader />
+      </FadeInView>
 
-        {/* LAYANAN UTAMA */}
-        <Text style={styles.sectionTitle}>LAYANAN UTAMA</Text>
-        <View style={styles.menuGrid}>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialCommunityIcons name="bed-king-outline" size={28} color={Colors.primary} />
-            <Text style={styles.menuText}>Pilih Kamar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialCommunityIcons name="qrcode-scan" size={28} color={Colors.primary} />
-            <Text style={styles.menuText}>Absensi QR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialCommunityIcons name="clipboard-text-clock-outline" size={28} color={Colors.primary} />
-            <Text style={styles.menuText}>Pengaduan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialCommunityIcons name="book-open-page-variant-outline" size={28} color={Colors.primary} />
-            <Text style={styles.menuText}>Info Tutor</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Banner menumpuk ke atas header */}
+      <FadeInView delay={150} style={styles.hero}>
+        <HeroBanner onPress={() => router.push('/reservasi')} />
+      </FadeInView>
 
-        {/* KAPASITAS GEDUNG */}
-        <View style={styles.capacityCard}>
-          <View style={styles.capacityHeader}>
-            <Text style={styles.capacityTitle}>KAPASITAS GEDUNG</Text>
-            <Text style={styles.capacityTotal}>Total 200 Kamar</Text>
-          </View>
-          <View style={styles.buildingRow}>
-            <View style={styles.buildingBox}>
-              <Text style={styles.buildingTitle}>Gedung Jadid</Text>
-              <Text style={styles.buildingSub}>Modern • Lt 2 & 3</Text>
-              <Text style={{fontSize: 10, color: Colors.textSecondary}}>100 Kamar</Text>
-            </View>
-            <View style={styles.buildingBox}>
-              <Text style={styles.buildingTitle}>Gedung Qodim</Text>
-              <Text style={styles.buildingSub}>Klasik • Lt 2 & 3</Text>
-              <Text style={{fontSize: 10, color: Colors.textSecondary}}>100 Kamar</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* KETENTUAN KAMAR */}
-        <View style={styles.rulesCard}>
-          <MaterialCommunityIcons name="star-crescent" size={24} color={Colors.primary} />
-          <Text style={styles.rulesText}>
-            <Text style={{color: Colors.textPrimary, fontWeight: 'bold'}}>Adab & Ketentuan: </Text>
-            Fasilitas dasar (kasur, meja belajar, lemari) sudah lengkap. Mari jaga kebersihan dan ketenangan ma'had.
-          </Text>
-        </View>
-        
-        <View style={{ height: 120 }} /> 
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.body}>
+        <LayananUtamaGrid />
+        <KapasitasGedungRow />
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.surface },
+  overscroll: {
+    position: 'absolute',
+    top: -1000,
+    left: 0,
+    right: 0,
+    height: 1000,
+    backgroundColor: Colors.primaryDark,
+  },
+  hero: { marginTop: -HEADER_OVERLAP, marginHorizontal: 20, zIndex: 2 },
+  body: { paddingHorizontal: 20, paddingTop: 20 },
+});

@@ -1,17 +1,35 @@
 export const Colors = {
-  background: '#0B130F',      // Hijau sangat gelap
-  cardBg: '#16221C',          // Hijau gelap untuk Card
-  cardBgLight: '#1F2F27',     // Hijau sedikit lebih terang
-  primary: '#D4AF37',         // Emas (Gold)
-  secondary: '#10B981',       // Hijau Zamrud (Emerald)
-  textPrimary: '#F9FAFB',     // Putih tulang
-  textSecondary: '#9CA3AF',   // Abu-abu terang
-  border: '#374151',
-  notificationDot: '#EF4444', 
-  
-  // Tambahan untuk Halaman Profil
-  danger: '#EF4444',          // Merah untuk tombol keluar
-  warningBg: '#422006',       // Coklat gelap untuk badge
-  warningText: '#F59E0B',     // Orange untuk badge
-  card: '#16221C',            // Alias agar sama dengan cardBg
-};
+  // Brand
+  primary: '#0E7A4A',       // Emerald
+  primaryDark: '#064E2F',   // Emerald gelap (gradient header)
+  primaryMid: '#14965C',    // Emerald terang (gradient highlight)
+  primaryLight: '#E6F4EA',  // Hijau sangat muda (background ikon)
+  accent: '#D4AF37',        // Gold
+  accentLight: '#F2DC86',   // Gold terang (gradient highlight)
+  accentDark: '#A98516',    // Gold gelap (teks kecil di atas putih)
+
+  // Surface
+  background: '#FFFFFF',    // Putih bersih
+  card: '#FFFFFF',
+  surface: '#F8FAFC',       // Off-white (background layar)
+
+  // Text
+  textPrimary: '#1F2937',
+  textSecondary: '#6B7280',
+  textLight: '#FFFFFF',
+
+  // Utility
+  danger: '#EF4444',
+  border: '#E5E7EB',
+  progressBg: '#E3EFE8',
+  progressFill: '#0E7A4A',
+} as const;
+
+/** Gradient disimpan sebagai tuple `as const` agar cocok dengan tipe expo-linear-gradient. */
+export const Gradients = {
+  header: ['#0A6340', '#0E7A4A', '#12875A'],
+  gold: ['#F2DC86', '#D4AF37'],
+  emerald: ['#0E7A4A', '#14965C'],
+  danger: ['#F87171', '#EF4444'],
+  heroOverlay: ['rgba(6,72,43,0.96)', 'rgba(14,122,74,0.78)', 'rgba(14,122,74,0.05)'],
+} as const;
