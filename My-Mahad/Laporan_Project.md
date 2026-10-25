@@ -70,3 +70,7 @@
 3. Nisa Naila (Halaman Login)
 
 <img src="dokumentasi\login.gif" width="50%" >
+
+4. Faiz Alfaresi (Halaman Registrasi)
+
+<img src="dokumentasi\Registrasi.gif" width="50%" >
