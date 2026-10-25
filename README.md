@@ -14,7 +14,7 @@
 
 ## Screenshot Screen
 
-| Screen | Fitur |
+| Screen | Screenshot |
 |---|---|
 | **Login** | <img src="My-Mahad\dokumentasi\ss-login.jpeg" width="50%" > |
 | **Registrasi** | <img src="My-Mahad\dokumentasi\ss-register.jpeg" width="50%" > |
