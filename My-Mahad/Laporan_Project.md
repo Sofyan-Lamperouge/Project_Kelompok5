@@ -56,12 +56,17 @@
 
 <img src="dokumentasi\Register.png" width="50%" >
 
-### Link Demo & Video ###
-1. Ashfahani Hasyim ( Menampilkan halaman profil sesuai desain)
-<video controls src="20261024-1327-43.7342686-1.mp4" title="Title"></video>
+## Laporan Halaman untuk UTS ##
 
-### Teknologi yang Digunakan ###
-* React Native dengan Expo (Expo Router)
-* Styling menggunakan React Native StyleSheet
-* Ikon dari `@expo/vector-icons` (Ionicons)
-* Fitur perangkat: `expo-image-picker` (Upload Foto Profil)
+### Demo Tiap Halaman ###
+1. Ashfahani Hasyim ( Menampilkan halaman profil sesuai desain)
+
+<video controls src="dokumentasi\profil.mp4" width="50%" title="Title"></video>
+
+2. Mohammad Sofyan Nurseha (Halaman Beranda dan Reservasi)
+
+<img src="dokumentasi\reservasi.gif" width="50%" >
+
+3. Nisa Naila (Halaman Login)
+
+<img src="dokumentasi\login.gif" width="50%" >
