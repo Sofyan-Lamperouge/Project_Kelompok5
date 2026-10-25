@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
-import { BUILDINGS, BuildingKey, floorLabel } from '../../data/buildings';
+import { BUILDINGS, BuildingKey } from '../../data/buildings';
 import { useReservasi } from '../../hooks/use-reservasi';
 import { useTabBarHeight } from '../../hooks/use-tab-bar-offset';
 import { FadeInView } from '../../components/atoms/FadeInView';
@@ -27,12 +27,17 @@ export default function ReservasiScreen() {
   const {
     building,
     otherBuildings,
-    selectedFloor,
+    floor,
+    selectedNumber,
+    selectedFloorLevel,
+    selectionLabel,
+    pendingNumbers,
     submitting,
     submittedLabel,
     dismissSubmitted,
     switchBuilding,
-    toggleFloor,
+    selectFloor,
+    toggleRoom,
     submit,
   } = useReservasi();
 
@@ -42,8 +47,8 @@ export default function ReservasiScreen() {
   }, [router]);
 
   const confirmSubmit = useCallback(() => {
-    if (!selectedFloor) return;
-    Alert.alert('Ajukan reservasi?', `${building.name} · ${floorLabel(selectedFloor.level)}`, [
+    if (!selectionLabel) return;
+    Alert.alert('Ajukan reservasi?', selectionLabel, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Ajukan',
@@ -52,7 +57,7 @@ export default function ReservasiScreen() {
         },
       },
     ]);
-  }, [building.name, selectedFloor, submit]);
+  }, [selectionLabel, submit]);
 
   return (
     <View style={styles.container}>
@@ -82,8 +87,12 @@ export default function ReservasiScreen() {
         <FadeInView key={building.key} delay={150} distance={18} style={styles.section}>
           <BuildingOverviewCard
             building={building}
-            selectedFloor={selectedFloor?.level ?? null}
-            onSelectFloor={toggleFloor}
+            floor={floor}
+            selectedNumber={selectedNumber}
+            selectedFloorLevel={selectedFloorLevel}
+            pending={pendingNumbers}
+            onSelectFloor={selectFloor}
+            onSelectRoom={toggleRoom}
           />
         </FadeInView>
 
@@ -96,9 +105,9 @@ export default function ReservasiScreen() {
 
       <ReservasiActionBar
         bottom={tabBarHeight}
-        summary={selectedFloor ? `${building.name} · ${floorLabel(selectedFloor.level)}` : undefined}
+        summary={selectionLabel ?? undefined}
         loading={submitting}
-        disabled={!selectedFloor}
+        disabled={!selectionLabel}
         onPress={confirmSubmit}
       />
     </View>

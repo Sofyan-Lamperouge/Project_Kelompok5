@@ -2,21 +2,36 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Colors } from '../../styles/colors';
 import { Radius, Shadow } from '../../styles/tokens';
-import { Building, Floor } from '../../data/buildings';
+import { Building, Floor, Room } from '../../data/buildings';
 import { AppText } from '../atoms/AppText';
 import { BuildingThumb } from '../atoms/BuildingThumb';
-import { FloorRow } from '../molecules/FloorRow';
+import { FadeInView } from '../atoms/FadeInView';
+import { FloorChips } from '../molecules/FloorChips';
+import { RoomGrid } from '../molecules/RoomGrid';
 import { StatTile } from '../molecules/StatTile';
 
 interface BuildingOverviewCardProps {
   building: Building;
-  /** Nomor lantai yang dipilih, atau null. */
-  selectedFloor: number | null;
-  onSelectFloor: (floor: Floor) => void;
+  /** Lantai yang sedang ditampilkan. */
+  floor: Floor;
+  selectedNumber: number | null;
+  /** Lantai tempat kamar terpilih berada (penanda di chip). */
+  selectedFloorLevel: number | null;
+  pending: ReadonlySet<number>;
+  onSelectFloor: (level: number) => void;
+  onSelectRoom: (room: Room) => void;
 }
 
-/** Kartu gedung: identitas, statistik ketersediaan, dan daftar lantai yang bisa dipilih. */
-export function BuildingOverviewCard({ building, selectedFloor, onSelectFloor }: BuildingOverviewCardProps) {
+/** Kartu gedung: identitas, statistik, pemilih lantai, dan grid kamar yang bisa dipilih. */
+export function BuildingOverviewCard({
+  building,
+  floor,
+  selectedNumber,
+  selectedFloorLevel,
+  pending,
+  onSelectFloor,
+  onSelectRoom,
+}: BuildingOverviewCardProps) {
   return (
     <View style={[styles.card, Shadow.soft]}>
       <View style={styles.header}>
@@ -34,18 +49,19 @@ export function BuildingOverviewCard({ building, selectedFloor, onSelectFloor }:
         <StatTile label="Maintenance" value={building.maintenance} tone="warning" />
       </View>
 
-      <AppText variant="overline" style={styles.listLabel}>Pilih Lantai</AppText>
-      <View accessibilityRole="radiogroup" style={styles.list}>
-        {building.floors.map((floor) => (
-          <FloorRow
-            key={floor.level}
-            level={floor.level}
-            available={floor.available}
-            selected={selectedFloor === floor.level}
-            onPress={() => onSelectFloor(floor)}
-          />
-        ))}
-      </View>
+      <AppText variant="overline" style={styles.label}>Pilih Lantai</AppText>
+      <FloorChips
+        floors={building.floors}
+        activeLevel={floor.level}
+        markedLevel={selectedFloorLevel}
+        onSelect={onSelectFloor}
+      />
+
+      <AppText variant="overline" style={[styles.label, styles.labelRooms]}>Pilih Kamar</AppText>
+      {/* key = lantai → grid beranimasi setiap berpindah lantai */}
+      <FadeInView key={`${building.key}-${floor.level}`} duration={320} distance={10}>
+        <RoomGrid floor={floor} selectedNumber={selectedNumber} pending={pending} onSelectRoom={onSelectRoom} />
+      </FadeInView>
     </View>
   );
 }
@@ -62,6 +78,6 @@ const styles = StyleSheet.create({
   info: { flex: 1, gap: 1 },
   name: { fontSize: 16, lineHeight: 22, marginBottom: 2 },
   stats: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  listLabel: { marginTop: 18, marginBottom: 6, marginLeft: 4, color: Colors.textSecondary },
-  list: { gap: 4 },
+  label: { marginTop: 18, marginBottom: 8, marginLeft: 2, color: Colors.textSecondary },
+  labelRooms: { marginTop: 20 },
 });

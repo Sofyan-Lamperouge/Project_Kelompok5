@@ -65,7 +65,7 @@
 
 2. Mohammad Sofyan Nurseha (Halaman Beranda dan Reservasi)
 
-<img src="dokumentasi\reservasi.gif" width="50%" >
+<img src="dokumentasi\beranda-reservasi.gif" width="50%" >
 
 3. Nisa Naila (Halaman Login)
 

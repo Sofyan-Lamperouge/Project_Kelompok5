@@ -14,8 +14,8 @@ interface Building {
 
 // TODO: ganti dengan data dari API
 const BUILDINGS: readonly Building[] = [
-  { key: 'jadid', title: 'Gedung Jadid', filled: 120, total: 150 },
-  { key: 'qodim', title: 'Gedung Qodim', filled: 95, total: 120 },
+  { key: 'jadid', title: 'Gedung Jadid', filled: 70, total: 100 },
+  { key: 'qodim', title: 'Gedung Qodim', filled: 77, total: 100 },
 ];
 
 const BASE_DELAY = 750;
