@@ -16,11 +16,11 @@
 
 | Screen | Fitur |
 |---|---|
-| **Login** | <img src="dokumentasi\ss-login.jpeg" width="50%" > |
-| **Registrasi** | <img src="dokumentasi\ss-register.jpeg" width="50%" > |
-| **Beranda** | <img src="dokumentasi\ss-beranda.jpeg" width="50%" > |
-| **Reservasi** | <img src="dokumentasi\ss-reservasi.jpeg" width="50%" > |
-| **Profile** |<img src="dokumentasi\ss-profile.jpeg" width="50%" >  |
+| **Login** | <img src="My-Mahad\dokumentasi\ss-login.jpeg" width="50%" > |
+| **Registrasi** | <img src="My-Mahad\dokumentasi\ss-register.jpeg" width="50%" > |
+| **Beranda** | <img src="My-Mahad\dokumentasi\ss-beranda.jpeg" width="50%" > |
+| **Reservasi** | <img src="My-Mahad\dokumentasi\ss-reservasi.jpeg" width="50%" > |
+| **Profile** |<img src="My-Mahad\dokumentasi\ss-profile.jpeg" width="50%" >  |
 
 
 ## Cara Menjalankan
