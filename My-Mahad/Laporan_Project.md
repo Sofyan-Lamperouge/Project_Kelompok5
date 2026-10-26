@@ -63,13 +63,18 @@
 
 <video controls src="dokumentasi\profil.mp4" width="50%" title="Title"></video>
 
-2. Mohammad Sofyan Nurseha (Halaman Beranda dan Reservasi)
+2. Mohammad Sofyan Nurseha 
+- (Halaman Beranda dan Reservasi)
 
 <img src="dokumentasi\beranda-reservasi.gif" width="50%" >
 
-3. Nisa Naila (Halaman Login)
+- (Halaman Login)
 
 <img src="dokumentasi\login.gif" width="50%" >
+
+3. Nisa Naila (Halaman Pengaduan)
+
+<img src="dokumentasi\Pengaduan.gif" width="50%" >
 
 4. Faiz Alfaresi (Halaman Registrasi)
 
