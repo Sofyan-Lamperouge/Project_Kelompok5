@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  ScrollView, View, Text, TouchableOpacity, StyleSheet, FlatList, 
+  View, Text, TouchableOpacity, StyleSheet, FlatList, 
   Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +19,6 @@ export default function ProfilScreen() {
   // State Modal Edit & Password
   const [modalEditVisible, setModalEditVisible] = useState(false);
   const [tempNama, setTempNama] = useState(nama);
-  const [tempNim, setTempNim] = useState(nim);
 
   const [modalPassVisible, setModalPassVisible] = useState(false);
   const [passLama, setPassLama] = useState('');
@@ -53,16 +52,15 @@ export default function ProfilScreen() {
     }
   };
 
-  // FUNGSI HAPUS FOTO (Diperbaiki: Langsung hapus tanpa Alert agar jalan di Web)
+  // Fungsi Hapus Foto
   const hapusFoto = () => {
-    setFotoProfil(null); // Set foto menjadi null (kembali ke inisial)
-    setModalFotoVisible(false); // Tutup modal
+    setFotoProfil(null);
+    setModalFotoVisible(false);
   };
 
   // Fungsi Simpan Data
   const handleSaveProfil = () => {
     setNama(tempNama);
-    setNim(tempNim);
     setModalEditVisible(false);
     Alert.alert("Berhasil", "Profil diperbarui!");
   };
@@ -96,16 +94,23 @@ export default function ProfilScreen() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
         
-        {/* HEADER HIJAU */}
+        {/* HEADER HIJAU DENGAN BATIK */}
         <View style={styles.headerBackground}>
+          
+          <Image 
+            source={require('../../../assets/images/batik.png')} 
+            style={styles.batikBackground}
+            resizeMode="cover"
+          />
+
+          <View style={styles.headerOverlay} />
+          
           <Text style={styles.headerTitle}>Profil</Text>
           
           <View style={styles.profileInfo}>
             <View style={styles.avatarWrapper}>
-              
               <TouchableOpacity 
                 style={styles.avatarCircle} 
                 onPress={() => fotoProfil ? setModalFotoVisible(true) : pickImage()}
@@ -123,6 +128,7 @@ export default function ProfilScreen() {
             </View>
             
             <Text style={styles.profileName}>{nama}</Text>
+            {/* Jarak NIM dan Card diberi marginBottom yang cukup */}
             <Text style={styles.profileNim}>NIM {nim}</Text>
           </View>
         </View>
@@ -135,7 +141,7 @@ export default function ProfilScreen() {
               data={MENU_ITEMS}
               keyExtractor={(item) => item.id}
               renderItem={renderMenuItem}
-              scrollEnabled={false}
+              scrollEnabled={false} 
               ItemSeparatorComponent={() => <View style={styles.divider} />}
             />
           </View>
@@ -145,36 +151,25 @@ export default function ProfilScreen() {
             <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
 
+          {/* LOGO MASJID DITATA RAPI DI BAWAH */}
           <View style={styles.mosqueIllustration}>
              <Image 
-                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/862/862826.png' }} 
+                source={require('../../../assets/images/logo-masjid.png')} 
                 style={styles.mosqueImage} 
              />
           </View>
 
-          <View style={{ height: 120 }} />
         </View>
-      </ScrollView>
-
-      {/* ========================================== */}
-      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI   */}
-      {/* ========================================== */}
+      
+      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI */}
       <Modal visible={modalFotoVisible} transparent={true} animationType="fade">
         <View style={styles.fullImageContainer}>
-          
-          <TouchableOpacity 
-            style={styles.closeImageButton} 
-            onPress={() => setModalFotoVisible(false)}
-          >
+          <TouchableOpacity style={styles.closeImageButton} onPress={() => setModalFotoVisible(false)}>
             <Ionicons name="close" size={30} color="#FFFFFF" />
           </TouchableOpacity>
           
           {fotoProfil && (
-            <Image 
-              source={{ uri: fotoProfil }} 
-              style={styles.fullImage} 
-              resizeMode="contain" 
-            />
+            <Image source={{ uri: fotoProfil }} style={styles.fullImage} resizeMode="contain" />
           )}
 
           <View style={styles.actionButtonsContainer}>
@@ -183,13 +178,11 @@ export default function ProfilScreen() {
               <Text style={styles.actionButtonText}>Ganti Foto</Text>
             </TouchableOpacity>
 
-            {/* TOMBOL HAPUS FOTO */}
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#EF4444' }]} onPress={hapusFoto}>
               <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
               <Text style={styles.actionButtonText}>Hapus Foto</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </Modal>
 
@@ -203,10 +196,15 @@ export default function ProfilScreen() {
                 <Ionicons name="close" size={24} color="#1E293B" />
               </TouchableOpacity>
             </View>
+            
             <Text style={styles.label}>Nama Lengkap</Text>
             <TextInput style={styles.input} value={tempNama} onChangeText={setTempNama} />
-            <Text style={styles.label}>NIM</Text>
-            <TextInput style={styles.input} value={tempNim} onChangeText={setTempNim} keyboardType="numeric" />
+
+            <Text style={styles.label}>NIM (Tidak dapat diubah)</Text>
+            <View style={styles.readOnlyInput}>
+              <Text style={styles.readOnlyText}>{nim}</Text>
+            </View>
+
             <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfil}>
               <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
             </TouchableOpacity>
@@ -241,82 +239,153 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
+  
+  // --- HEADER HIJAU & BATIK ---
   headerBackground: {
     backgroundColor: '#0A704A', 
-    height: 280, 
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    paddingTop: 70,
+    height: 240, 
+    borderBottomLeftRadius: 40, 
+    borderBottomRightRadius: 40,
+    paddingTop: 40, 
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  batikBackground: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0.8, 
+  },
+  headerOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(10, 112, 74, 0.5)', 
   },
   headerTitle: {
     position: 'absolute',
-    top: 60,
-    left: 25,
+    top: 40, 
+    left: 30,
     color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '500',
+    fontWeight: '600',
+    zIndex: 1, 
+    textShadowColor: 'rgba(0, 0, 0, 0.3)', 
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  profileInfo: { alignItems: 'center', marginTop: 10 },
-  avatarWrapper: { position: 'relative', marginBottom: 12 },
+  profileInfo: { 
+    alignItems: 'center', 
+    marginTop: 5, 
+    zIndex: 1 
+  },
+  avatarWrapper: { position: 'relative', marginBottom: 10 },
   avatarCircle: {
-    width: 95,
-    height: 95,
-    borderRadius: 50,
+    width: 90, 
+    height: 90,
+    borderRadius: 45,
     backgroundColor: '#E2E8F0', 
-    borderWidth: 3,
+    borderWidth: 3, 
     borderColor: '#FFFFFF', 
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   avatarImage: { width: '100%', height: '100%' },
   avatarText: { color: '#0A704A', fontSize: 32, fontWeight: 'bold' },
   cameraIcon: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  profileName: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  profileNim: { color: '#FFFFFF', fontSize: 14, opacity: 0.9 },
-  contentContainer: { marginTop: -30, paddingHorizontal: 25 },
+  profileName: { 
+    color: '#FFFFFF', 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
+  },
+  profileNim: { 
+    color: '#FFFFFF', 
+    fontSize: 14, 
+    opacity: 0.9, 
+    marginBottom: 25, // DIBERI CELAH 25 agar tidak mepet dengan card
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  }, 
+  
+  // --- AREA KONTEN PUTIH ---
+  contentContainer: { marginTop: -35, paddingHorizontal: 25, flex: 1 },
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
+    borderRadius: 20, 
     paddingVertical: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 8 }, 
     shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowRadius: 15,
     elevation: 5,
     borderWidth: 1,
     borderColor: '#F1F5F9', 
+    zIndex: 2, 
   },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 15 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 20 },
   menuIconContainer: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 45, height: 45, borderRadius: 22.5,
     backgroundColor: '#E8F5E9', 
     justifyContent: 'center', alignItems: 'center', marginRight: 15,
   },
   menuTextContainer: { flex: 1 },
-  menuTitle: { color: '#1E293B', fontSize: 15, fontWeight: 'bold' },
-  menuSubtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#E2E8F0', marginLeft: 70 },
+  menuTitle: { color: '#1E293B', fontSize: 16, fontWeight: 'bold' },
+  menuSubtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#E2E8F0', marginLeft: 80 },
+  
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#EF4444', marginTop: 20, padding: 14, borderRadius: 10,
+    backgroundColor: '#EF4444', marginTop: 25, padding: 16, borderRadius: 15,
+    shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
+    zIndex: 1, 
   },
-  logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: '500' },
+  logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   
-  mosqueIllustration: { alignItems: 'center', marginTop: 20 },
-  mosqueImage: { width: 250, height: 150, opacity: 0.1, resizeMode: 'contain' },
+  // --- LOGO MASJID DITATA DI BAWAH ---
+  mosqueIllustration: { 
+    flex: 1, 
+    justifyContent: 'center', // Posisi di tengah sisa ruang
+    alignItems: 'center', 
+    marginTop: 20,
+    paddingBottom: 80, // Jarak aman dari tab bar bawah
+  },
+  mosqueImage: { 
+    width: 150, 
+    height: 150, 
+    opacity: 0.15, // Dibuat transparan elegan
+    resizeMode: 'contain' 
+    // tintColor dihapus agar gambar asli muncul
+  },
 
+  // --- MODAL STYLES ---
   fullImageContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.95)',
@@ -376,6 +445,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0'
   },
-  saveButton: { backgroundColor: '#0A704A', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  readOnlyInput: {
+    backgroundColor: '#E2E8F0', 
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+  },
+  readOnlyText: {
+    color: '#64748B', 
+    fontSize: 16,
+  },
+  saveButton: { backgroundColor: '#0A704A', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });
