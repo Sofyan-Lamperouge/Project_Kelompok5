@@ -42,7 +42,8 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const { values, errors, formError, loading, success, setValue, submit } = useRegisterForm();
+  // ← BARU: ambil blurField dari hook
+  const { values, errors, formError, loading, success, setValue, blurField, submit } = useRegisterForm();
   const inputs = useRef<Partial<Record<RegisterField, TextInput | null>>>({});
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -92,6 +93,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                 secure={field.secure}
                 value={values[field.key]}
                 onChangeText={(text) => setValue(field.key, text)}
+                onBlur={() => blurField(field.key)} // ← BARU: validasi saat meninggalkan field
                 editable={!lockInputs}
                 returnKeyType={next ? 'next' : 'done'}
                 blurOnSubmit={!next}

@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export const MIN_PASSWORD = 8;
 
 export type RegisterField = 'nama' | 'nim' | 'email' | 'password' | 'konfirmasi';
 export type RegisterValues = Record<RegisterField, string>;
 export type RegisterErrors = Partial<Record<RegisterField, string>>;
+type TouchedFields = Partial<Record<RegisterField, boolean>>;
 
 const EMPTY_VALUES: RegisterValues = { nama: '', nim: '', email: '', password: '', konfirmasi: '' };
+const ALL_FIELDS: readonly RegisterField[] = ['nama', 'nim', 'email', 'password', 'konfirmasi'];
 
 /** Fungsi murni → mudah diuji dan dipakai ulang. */
 export function validateRegister(values: RegisterValues): RegisterErrors {
@@ -41,7 +43,8 @@ export interface SubmitResult {
 
 export function useRegisterForm() {
   const [values, setValues] = useState<RegisterValues>(EMPTY_VALUES);
-  const [errors, setErrors] = useState<RegisterErrors>({});
+  // Field yang sudah diketik / ditinggalkan user → hanya field ini yang menampilkan error
+  const [touched, setTouched] = useState<TouchedFields>({});
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -55,18 +58,38 @@ export function useRegisterForm() {
     };
   }, []);
 
+  // Validasi real time: dihitung ulang setiap nilai berubah.
+  // Karena dihitung dari semua nilai, error "Password tidak sama" otomatis
+  // ikut diperbarui saat password diubah setelah konfirmasi diisi.
+  const allErrors = useMemo(() => validateRegister(values), [values]);
+
+  // Hanya tampilkan error untuk field yang sudah disentuh
+  const errors = useMemo<RegisterErrors>(() => {
+    const visible: RegisterErrors = {};
+    for (const field of ALL_FIELDS) {
+      if (touched[field] && allErrors[field]) visible[field] = allErrors[field];
+    }
+    return visible;
+  }, [allErrors, touched]);
+
   const setValue = useCallback((field: RegisterField, text: string) => {
     setValues((prev) => ({ ...prev, [field]: text }));
-    // Hapus pesan error field ini saat user mulai mengetik ulang
-    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
     setFormError('');
+  }, []);
+
+  /** Dipanggil saat user meninggalkan field (onBlur), mis. field kosong langsung diberi tahu. */
+  const blurField = useCallback((field: RegisterField) => {
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
   }, []);
 
   const submit = useCallback(async (): Promise<SubmitResult> => {
     if (loading || success) return { ok: false, errors: {} };
 
+    // Saat submit, semua field dianggap sudah disentuh agar semua error tampil
+    setTouched({ nama: true, nim: true, email: true, password: true, konfirmasi: true });
+
     const result = validateRegister(values);
-    setErrors(result);
     if (Object.keys(result).length > 0) return { ok: false, errors: result };
 
     setFormError('');
@@ -84,5 +107,5 @@ export function useRegisterForm() {
     }
   }, [loading, success, values]);
 
-  return { values, errors, formError, loading, success, setValue, submit };
+  return { values, errors, formError, loading, success, setValue, blurField, submit };
 }
