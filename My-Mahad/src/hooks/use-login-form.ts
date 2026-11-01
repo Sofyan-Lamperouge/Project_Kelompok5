@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Role, useAuth } from '../context/AuthContext';
 
 export type LoginField = 'nim' | 'password';
 export type LoginValues = Record<LoginField, string>;
 export type LoginErrors = Partial<Record<LoginField, string>>;
+type TouchedFields = Partial<Record<LoginField, boolean>>;
 
 const EMPTY_VALUES: LoginValues = { nim: '', password: '' };
+const ALL_FIELDS: readonly LoginField[] = ['nim', 'password'];
 
 /**
  * Saat login hanya memeriksa "wajib diisi". Aturan panjang password sengaja tidak diperiksa di sini:
@@ -28,7 +30,8 @@ export interface LoginSubmitResult {
 export function useLoginForm() {
   const { signIn } = useAuth();
   const [values, setValues] = useState<LoginValues>(EMPTY_VALUES);
-  const [errors, setErrors] = useState<LoginErrors>({});
+  // Field yang sudah diketik / ditinggalkan user → hanya field ini yang menampilkan error
+  const [touched, setTouched] = useState<TouchedFields>({});
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -40,17 +43,36 @@ export function useLoginForm() {
     };
   }, []);
 
+  // Validasi real time: dihitung ulang setiap nilai berubah (sama seperti halaman registrasi).
+  const allErrors = useMemo(() => validateLogin(values), [values]);
+
+  // Hanya tampilkan error untuk field yang sudah disentuh
+  const errors = useMemo<LoginErrors>(() => {
+    const visible: LoginErrors = {};
+    for (const field of ALL_FIELDS) {
+      if (touched[field] && allErrors[field]) visible[field] = allErrors[field];
+    }
+    return visible;
+  }, [allErrors, touched]);
+
   const setValue = useCallback((field: LoginField, text: string) => {
     setValues((prev) => ({ ...prev, [field]: text }));
-    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
-    setFormError('');
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+    setFormError(''); // pesan "NIM atau password salah" hilang begitu user mengetik ulang
+  }, []);
+
+  /** Dipanggil saat user meninggalkan field (onBlur), mis. field kosong langsung diberi tahu. */
+  const blurField = useCallback((field: LoginField) => {
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
   }, []);
 
   const submit = useCallback(async (): Promise<LoginSubmitResult> => {
     if (loading) return { ok: false, errors: {} };
 
+    // Saat submit, semua field dianggap sudah disentuh agar semua error tampil
+    setTouched({ nim: true, password: true });
+
     const result = validateLogin(values);
-    setErrors(result);
     if (Object.keys(result).length > 0) return { ok: false, errors: result };
 
     setFormError('');
@@ -75,5 +97,5 @@ export function useLoginForm() {
     }
   }, [loading, signIn, values]);
 
-  return { values, errors, formError, loading, setValue, submit };
+  return { values, errors, formError, loading, setValue, blurField, submit };
 }

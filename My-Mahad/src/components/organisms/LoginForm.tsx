@@ -20,7 +20,7 @@ const BASE_DELAY = 250;
 const STAGGER = 80;
 
 export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
-  const { values, errors, formError, loading, setValue, submit } = useLoginForm();
+  const { values, errors, formError, loading, setValue, blurField, submit } = useLoginForm();
   const { shake, runShake } = useShake();
   const inputs = useRef<Partial<Record<LoginField, TextInput | null>>>({});
 
@@ -52,6 +52,7 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
             placeholder="NIM"
             value={values.nim}
             onChangeText={(t) => setValue('nim', t)}
+            onBlur={() => blurField('nim')} // validasi saat meninggalkan field
             error={errors.nim}
             keyboardType="number-pad"
             editable={!loading}
@@ -71,6 +72,7 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
             secure
             value={values.password}
             onChangeText={(t) => setValue('password', t)}
+            onBlur={() => blurField('password')}
             error={errors.password}
             autoComplete="password"
             textContentType="password"
