@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAdminData } from '../../context/AdminDataContext';
 import { DASHBOARD_COUNTS } from '../../data/admin-dashboard';
 import { getOverallStats } from '../../data/buildings';
 import { FadeInView } from '../atoms/FadeInView';
@@ -25,13 +26,17 @@ const STAGGER = 90;
 /** Empat angka yang butuh perhatian admin hari ini. */
 export function AdminKpiGrid() {
   const router = useRouter();
+  const { requests, complaints } = useAdminData();
+  // Dihitung dari data yang sama dengan halaman daftarnya → selalu sinkron
+  const pengajuanMenunggu = requests.filter((r) => r.status === 'menunggu').length;
+  const pengaduanBaru = complaints.filter((c) => c.status === 'baru').length;
   const residents = getOverallStats().occupied; // penghuni = kamar terisi
   const { absensiHadir } = DASHBOARD_COUNTS;
   const attendance = residents > 0 ? Math.round((absensiHadir / residents) * 100) : 0;
 
   const items: readonly Kpi[] = [
-    { key: 'pengajuan', iconName: 'calendar-clock', label: 'Pengajuan Menunggu', value: DASHBOARD_COUNTS.pengajuanMenunggu, hint: 'Perlu ditinjau', tone: 'warning', href: '/(admin)/pengajuan-reservasi' },
-    { key: 'pengaduan', iconName: 'message-alert-outline', label: 'Pengaduan Baru', value: DASHBOARD_COUNTS.pengaduanBaru, hint: 'Belum ditangani', tone: 'danger', href: '/(admin)/kelola-pengaduan' },
+    { key: 'pengajuan', iconName: 'calendar-clock', label: 'Pengajuan Menunggu', value: pengajuanMenunggu, hint: 'Perlu ditinjau', tone: 'warning', href: '/(admin)/pengajuan-reservasi' },
+    { key: 'pengaduan', iconName: 'message-alert-outline', label: 'Pengaduan Baru', value: pengaduanBaru, hint: 'Belum ditangani', tone: 'danger', href: '/(admin)/kelola-pengaduan' },
     // TODO: href untuk Absensi dan Verifikasi Akun saat halamannya dibuat
     { key: 'absensi', iconName: 'clipboard-check-outline', label: 'Absensi Hari Ini', value: `${absensiHadir}/${residents}`, hint: `${attendance}% hadir`, tone: 'primary' },
     { key: 'akun', iconName: 'account-clock-outline', label: 'Verifikasi Akun', value: DASHBOARD_COUNTS.verifikasiAkun, hint: 'Mahasiswa baru', tone: 'primary' },

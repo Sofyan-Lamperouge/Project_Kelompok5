@@ -2,6 +2,7 @@ import React, { ComponentProps } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { setStatusBarStyle } from 'expo-status-bar';
+import { AdminDataProvider } from '../../context/AdminDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useGlassTabOptions } from '../../hooks/use-glass-tab-options';
 import { TabBarIcon } from '../../components/molecules/TabBarIcon';
@@ -39,24 +40,26 @@ export default function AdminLayout() {
   if (session?.role !== 'admin') return <Redirect href="/(auth)/login" />;
 
   return (
-    <Tabs
-      screenOptions={screenOptions}
-      screenListeners={({ route }) => ({
-        focus: () => setStatusBarStyle(LIGHT_STATUS_BAR_ROUTES.includes(route.name) ? 'light' : 'dark'),
-      })}
-    >
-      {TAB_ITEMS.map((item) => (
-        <Tabs.Screen
-          key={item.name}
-          name={item.name}
-          options={{
-            title: item.title,
-            tabBarIcon: ({ focused, color, size }) => (
-              <TabBarIcon active={item.active} inactive={item.inactive} focused={focused} color={color} size={size} />
-            ),
-          }}
-        />
-      ))}
-    </Tabs>
+    <AdminDataProvider>
+      <Tabs
+        screenOptions={screenOptions}
+        screenListeners={({ route }) => ({
+          focus: () => setStatusBarStyle(LIGHT_STATUS_BAR_ROUTES.includes(route.name) ? 'light' : 'dark'),
+        })}
+      >
+        {TAB_ITEMS.map((item) => (
+          <Tabs.Screen
+            key={item.name}
+            name={item.name}
+            options={{
+              title: item.title,
+              tabBarIcon: ({ focused, color, size }) => (
+                <TabBarIcon active={item.active} inactive={item.inactive} focused={focused} color={color} size={size} />
+              ),
+            }}
+          />
+        ))}
+      </Tabs>
+    </AdminDataProvider>
   );
 }

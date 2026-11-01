@@ -3,22 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { Colors } from '../../styles/colors';
 import { REQUEST_STATUS_LABEL, ReservationRequest } from '../../data/admin-dashboard';
 import { AppText } from '../atoms/AppText';
-import { ChipTone, StatusChip } from '../atoms/StatusChip';
-
-const STATUS_TONE: Record<ReservationRequest['status'], ChipTone> = {
-  menunggu: 'warning',
-  disetujui: 'success',
-  ditolak: 'danger',
-};
-
-function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
-}
+import { StatusChip } from '../atoms/StatusChip';
+import { getInitials } from '../../utils/get-initials';
+import { REQUEST_STATUS_TONE } from './RequestCard';
 
 interface RequestRowProps {
   request: ReservationRequest;
@@ -43,7 +30,7 @@ export function RequestRow({ request }: RequestRowProps) {
         <AppText variant="caption" numberOfLines={1}>{detail}</AppText>
       </View>
       <View style={styles.side}>
-        <StatusChip label={REQUEST_STATUS_LABEL[request.status]} tone={STATUS_TONE[request.status]} />
+        <StatusChip label={REQUEST_STATUS_LABEL[request.status]} tone={REQUEST_STATUS_TONE[request.status]} />
         <AppText variant="caption" style={styles.ago}>{request.ago}</AppText>
       </View>
     </View>
