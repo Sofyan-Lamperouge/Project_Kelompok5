@@ -6,6 +6,7 @@ export const Colors = {
   primaryLight: '#E6F4EA',  // Hijau sangat muda (background ikon)
   accent: '#D4AF37',        // Gold
   accentLight: '#F2DC86',   // Gold terang (gradient highlight)
+  accentSoft: '#FBF5E1',    // Gold sangat muda (background status)
   accentDark: '#A98516',    // Gold gelap (teks kecil di atas putih)
 
   // Surface

@@ -80,7 +80,11 @@
 
 <img src="dokumentasi\Registrasi.gif" width="50%" >
 
-## Laporan Revisian Fitus di UTS ##
+## Laporan Revisian UTS ##
 1. Ashfahani Hasyim => melakukan perbaikan di halaman edit profil, bagian NIM menjadi primary key
 
-![alt text](image.png)
+![alt text](dokumentasi\update-profile.png)
+
+2. Mohammad Sofyan Nurseha (Menambahkan role admin dan dashboard admin)
+
+<img src="dokumentasi\dashboard-admin.gif" width="50%" >

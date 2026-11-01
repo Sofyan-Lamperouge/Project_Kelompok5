@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { Animated, Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Colors } from '../../styles/colors';
+import { Role } from '../../context/AuthContext';
 import { LoginField, useLoginForm } from '../../hooks/use-login-form';
 import { useShake } from '../../hooks/use-shake';
 import { AppButton } from '../atoms/AppButton';
@@ -9,8 +10,8 @@ import { FadeInView } from '../atoms/FadeInView';
 import { FormField } from '../molecules/FormField';
 
 interface LoginFormProps {
-  /** Dipanggil setelah login berhasil. */
-  onSuccess: () => void;
+  /** Dipanggil setelah login berhasil, beserta peran pengguna. */
+  onSuccess: (role: Role) => void;
   /** Jika diisi, tautan "Lupa password?" ditampilkan. */
   onPressForgot?: () => void;
 }
@@ -25,9 +26,9 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
 
   const handleSubmit = useCallback(async () => {
     const result = await submit();
-    if (result.ok) {
+    if (result.ok && result.role) {
       Keyboard.dismiss();
-      onSuccess();
+      onSuccess(result.role);
       return;
     }
     const firstInvalid: LoginField | undefined = result.errors.nim ? 'nim' : result.errors.password ? 'password' : undefined;

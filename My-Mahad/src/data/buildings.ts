@@ -116,3 +116,26 @@ export function floorRange(floor: Floor): string {
 export function getBuilding(key: BuildingKey): Building {
   return BUILDINGS.find((b) => b.key === key) ?? BUILDINGS[0];
 }
+
+export interface OverallStats {
+  capacity: number;
+  available: number;
+  occupied: number;
+  maintenance: number;
+  /** Persentase kamar terisi (0–100) dari seluruh gedung. */
+  occupancyPercent: number;
+}
+
+/** Statistik gabungan semua gedung, dihitung dari data kamar. */
+export function getOverallStats(): OverallStats {
+  const sum = (pick: (b: Building) => number) => BUILDINGS.reduce((total, b) => total + pick(b), 0);
+  const capacity = sum((b) => b.capacity);
+  const occupied = sum((b) => b.occupied);
+  return {
+    capacity,
+    available: sum((b) => b.available),
+    occupied,
+    maintenance: sum((b) => b.maintenance),
+    occupancyPercent: capacity > 0 ? (occupied / capacity) * 100 : 0,
+  };
+}

@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
+import { Role } from '../../context/AuthContext';
 import { AppText } from '../../components/atoms/AppText';
 import { FadeInView } from '../../components/atoms/FadeInView';
 import { BrandLogo } from '../../components/molecules/BrandLogo';
@@ -12,7 +13,11 @@ import { LoginForm } from '../../components/organisms/LoginForm';
 export default function LoginScreen() {
   const router = useRouter();
 
-  const goToHome = useCallback(() => router.replace('/(tabs)/beranda'), [router]);
+  // Peran menentukan halaman tujuan: admin → dashboard admin, mahasiswa → Beranda
+  const goToHome = useCallback(
+    (role: Role) => router.replace(role === 'admin' ? '/(admin)/dashboard' : '/(tabs)/beranda'),
+    [router],
+  );
   const goToRegister = useCallback(() => router.push('/(auth)/register'), [router]);
   // TODO: arahkan ke halaman lupa password bila sudah tersedia
   const handleForgot = useCallback(() => Alert.alert('Lupa password', 'Fitur ini akan segera tersedia.'), []);

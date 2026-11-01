@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Role, useAuth } from '../context/AuthContext';
 
 export type LoginField = 'nim' | 'password';
 export type LoginValues = Record<LoginField, string>;
@@ -20,9 +21,12 @@ export function validateLogin(values: LoginValues): LoginErrors {
 export interface LoginSubmitResult {
   ok: boolean;
   errors: LoginErrors;
+  /** Peran pengguna bila login berhasil → menentukan halaman tujuan. */
+  role?: Role;
 }
 
 export function useLoginForm() {
+  const { signIn } = useAuth();
   const [values, setValues] = useState<LoginValues>(EMPTY_VALUES);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [formError, setFormError] = useState('');
@@ -52,10 +56,16 @@ export function useLoginForm() {
     setFormError('');
     setLoading(true);
     try {
-      // TODO: ganti dengan request login ke backend, lalu simpan token (mis. expo-secure-store)
-      await new Promise<void>((resolve) => setTimeout(resolve, 1200));
+      const res = await signIn(values.nim.trim(), values.password);
+      if (!res.ok) {
+        if (mounted.current) {
+          setFormError(res.message);
+          setLoading(false);
+        }
+        return { ok: false, errors: {} };
+      }
       // Sengaja TIDAK mematikan loading saat sukses: tombol tetap "sibuk" selama navigasi berlangsung.
-      return { ok: true, errors: {} };
+      return { ok: true, errors: {}, role: res.role };
     } catch {
       if (mounted.current) {
         setFormError('Login gagal. Periksa NIM dan password Anda.');
@@ -63,7 +73,7 @@ export function useLoginForm() {
       }
       return { ok: false, errors: {} };
     }
-  }, [loading, values]);
+  }, [loading, signIn, values]);
 
   return { values, errors, formError, loading, setValue, submit };
 }
