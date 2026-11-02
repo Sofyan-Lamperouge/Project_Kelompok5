@@ -11,8 +11,8 @@
 
 <img src="dokumentasi\revisi-login.gif" width="50%" >
 
-<img src="dokumentasi\revisi-Pengaduan.gif" width="50%" >
+<img src="dokumentasi\revisi-pengaduan.gif" width="50%" >
 
 4. Faiz Alfaresi (Revisi menambahkan validitas registrasi)
 
-<img src="dokumentasi\validitas_registrasi" width="50%" >
+<img src="dokumentasi\validitas_registrasi.jpeg" width="50%" >
