@@ -83,14 +83,14 @@
 ## Laporan Revisian UTS ##
 1. Ashfahani Hasyim => melakukan perbaikan di halaman edit profil, bagian NIM menjadi primary key
 
-![alt text](dokumentasi\update-profile.png)
+<img src="dokumentasi\update-profile.png" width="50%" >
 
 2. Mohammad Sofyan Nurseha (Menambahkan role admin dan dashboard admin)
 
 <img src="dokumentasi\dashboard-admin.gif" width="50%" >
 
-2. Nisa Naila  (Revisi Login dan Pengaduan)
+3. Nisa Naila (Melakukan Perbaikan Login dan Pengaduan)
 
-<img src="dokumentasi\revisi-login.gif" width="50%" >
+<img src="dokumentasi/revisi-login.gif" width="50%" >
 
-<img src="dokumentasi\revisi-Pengaduan.gif" width="50%" >
+<img src="dokumentasi/revisi-pengaduan.gif" width="50%" >
