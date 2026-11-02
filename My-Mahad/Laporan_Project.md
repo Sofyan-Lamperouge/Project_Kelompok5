@@ -88,3 +88,9 @@
 2. Mohammad Sofyan Nurseha (Menambahkan role admin dan dashboard admin)
 
 <img src="dokumentasi\dashboard-admin.gif" width="50%" >
+
+2. Nisa Naila  (Revisi Login dan Pengaduan)
+
+<img src="dokumentasi\revisi-login.gif" width="50%" >
+
+<img src="dokumentasi\revisi-Pengaduan.gif" width="50%" >
