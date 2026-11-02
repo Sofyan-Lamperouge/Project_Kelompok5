@@ -11,16 +11,18 @@
 | **Beranda** | Header sapaan dan notifikasi, banner reservasi, menu layanan 2×2, kapasitas gedung dengan progress bar beranimasi |
 | **Reservasi** | Pilih gedung (Jadid/Qodim), lihat statistik kamar, pilih lantai 2–5, lalu pilih kamar kosong dari grid 25 kamar per lantai (mis. 201–225), dan ajukan reservasi |
 | **Profile** | Ubah foto profile, ubah data diri, ubah password, serta tombol keluar yang mengarahkan ke halaman login |
+| **Admin** | Kelola kamar, Kelola Pengajuan Reservasi, Kelola Pengaduan, serta tombol keluar yang mengarahkan ke halaman login |
 
-## Screenshot Screen
+## Screenshot atau Gif Screen
 
-| Screen | Screenshot |
+| Screen | Screenshot atau Gif |
 |---|---|
 | **Login** | <img src="My-Mahad\dokumentasi\ss-login.jpeg" width="50%" > |
 | **Registrasi** | <img src="My-Mahad\dokumentasi\ss-register.jpeg" width="50%" > |
 | **Beranda** | <img src="My-Mahad\dokumentasi\ss-beranda.jpeg" width="50%" > |
 | **Reservasi** | <img src="My-Mahad\dokumentasi\ss-reservasi.jpeg" width="50%" > |
 | **Profile** |<img src="My-Mahad\dokumentasi\ss-profile.jpeg" width="50%" >  |
+| **Admin** |<img src="My-Mahad\dokumentasi\role-admin.gif" width="50%" >  |
 
 
 ## Cara Menjalankan
