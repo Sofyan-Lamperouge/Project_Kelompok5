@@ -89,8 +89,16 @@
 
 <img src="dokumentasi\dashboard-admin.gif" width="50%" >
 
+<<<<<<< HEAD
 3. Nisa Naila (Melakukan Perbaikan Login dan Pengaduan)
+=======
+3. Nisa Naila  (Revisi Login dan Pengaduan)
+>>>>>>> fa253081fc24cf32ed742089b4e5319b3028224e
 
 <img src="dokumentasi/revisi-login.gif" width="50%" >
 
 <img src="dokumentasi/revisi-pengaduan.gif" width="50%" >
+
+4. Faiz Alfaresi (Revisi menambahkan validitas registrasi)
+
+<img src="dokumentasi/revisi-login.gif" width="50%" >
