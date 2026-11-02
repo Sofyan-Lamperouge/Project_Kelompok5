@@ -4,15 +4,13 @@ import { Colors } from '../../styles/colors';
 import { Role } from '../../context/AuthContext';
 import { LoginField, useLoginForm } from '../../hooks/use-login-form';
 import { useShake } from '../../hooks/use-shake';
-import { AppButton } from '../atoms/AppButton';
+import { ActionButton } from '../atoms/ActionButton'; // <-- Ubah ke ActionButton
 import { AppText } from '../atoms/AppText';
 import { FadeInView } from '../atoms/FadeInView';
 import { FormField } from '../molecules/FormField';
 
 interface LoginFormProps {
-  /** Dipanggil setelah login berhasil, beserta peran pengguna. */
   onSuccess: (role: Role) => void;
-  /** Jika diisi, tautan "Lupa password?" ditampilkan. */
   onPressForgot?: () => void;
 }
 
@@ -20,7 +18,8 @@ const BASE_DELAY = 250;
 const STAGGER = 80;
 
 export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
-  const { values, errors, formError, loading, setValue, blurField, submit } = useLoginForm();
+  const { values, errors, formError, loading, isFormValid, setValue, blurField, submit } =
+    useLoginForm();
   const { shake, runShake } = useShake();
   const inputs = useRef<Partial<Record<LoginField, TextInput | null>>>({});
 
@@ -31,14 +30,16 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
       onSuccess(result.role);
       return;
     }
-    const firstInvalid: LoginField | undefined = result.errors.nim ? 'nim' : result.errors.password ? 'password' : undefined;
+    const firstInvalid: LoginField | undefined = result.errors.nim
+      ? 'nim'
+      : result.errors.password
+      ? 'password'
+      : undefined;
     if (firstInvalid) {
       inputs.current[firstInvalid]?.focus();
-      runShake();
-    } else if (!loading) {
-      runShake(); // kegagalan dari server
     }
-  }, [submit, onSuccess, runShake, loading]);
+    runShake();
+  }, [submit, onSuccess, runShake]);
 
   return (
     <View>
@@ -52,7 +53,7 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
             placeholder="NIM"
             value={values.nim}
             onChangeText={(t) => setValue('nim', t)}
-            onBlur={() => blurField('nim')} // validasi saat meninggalkan field
+            onBlur={() => blurField('nim')}
             error={errors.nim}
             keyboardType="number-pad"
             editable={!loading}
@@ -96,7 +97,14 @@ export function LoginForm({ onSuccess, onPressForgot }: LoginFormProps) {
       ) : null}
 
       <FadeInView delay={BASE_DELAY + STAGGER * 2} distance={16} style={styles.button}>
-        <AppButton label="Masuk" iconName="arrow-right" fullWidth loading={loading} onPress={handleSubmit} />
+        <ActionButton // <-- Ubah dari AppButton ke ActionButton
+          label="Masuk"
+          iconName="arrow-right"
+          fullWidth
+          loading={loading}
+          disabled={!isFormValid}
+          onPress={handleSubmit}
+        />
       </FadeInView>
     </View>
   );

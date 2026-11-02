@@ -1,101 +1,151 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Role, useAuth } from '../context/AuthContext';
+
+import { useCallback, useMemo, useState } from 'react';
+import { useAuth, Role } from '../context/AuthContext';
 
 export type LoginField = 'nim' | 'password';
-export type LoginValues = Record<LoginField, string>;
-export type LoginErrors = Partial<Record<LoginField, string>>;
-type TouchedFields = Partial<Record<LoginField, boolean>>;
 
-const EMPTY_VALUES: LoginValues = { nim: '', password: '' };
-const ALL_FIELDS: readonly LoginField[] = ['nim', 'password'];
+export type LoginErrors = {
+  nim?: string;
+  password?: string;
+};
 
-/**
- * Saat login hanya memeriksa "wajib diisi". Aturan panjang password sengaja tidak diperiksa di sini:
- * itu urusan register, dan server-lah yang berhak menolak kredensial yang salah.
- */
-export function validateLogin(values: LoginValues): LoginErrors {
-  const errors: LoginErrors = {};
-  if (!values.nim.trim()) errors.nim = 'NIM wajib diisi.';
-  if (!values.password) errors.password = 'Password wajib diisi.';
-  return errors;
-}
+type TouchedState = Record<LoginField, boolean>;
 
-export interface LoginSubmitResult {
-  ok: boolean;
-  errors: LoginErrors;
-  /** Peran pengguna bila login berhasil → menentukan halaman tujuan. */
-  role?: Role;
-}
+const validateNim = (value: string): string | undefined => {
+  const nim = value.trim();
+
+  if (!nim) return 'NIM wajib diisi.';
+
+  // Admin menggunakan username "admin"
+  if (nim.toLowerCase() === 'admin') return undefined;
+
+  if (!/^\d{10,}$/.test(nim)) {
+    return 'NIM harus berupa angka (minimal 10 digit).';
+  }
+
+  return undefined;
+};
+
+const validatePassword = (value: string): string | undefined => {
+  if (!value.trim()) return 'Password wajib diisi.';
+  if (value.length < 6) return 'Password minimal 6 karakter.';
+
+  return undefined;
+};
 
 export function useLoginForm() {
   const { signIn } = useAuth();
-  const [values, setValues] = useState<LoginValues>(EMPTY_VALUES);
-  // Field yang sudah diketik / ditinggalkan user → hanya field ini yang menampilkan error
-  const [touched, setTouched] = useState<TouchedFields>({});
-  const [formError, setFormError] = useState('');
+
+  const [values, setValues] = useState<Record<LoginField, string>>({
+    nim: '',
+    password: '',
+  });
+
+  const [touched, setTouched] = useState<TouchedState>({
+    nim: false,
+    password: false,
+  });
+
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | undefined>();
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
+  const allErrors: LoginErrors = useMemo(
+    () => ({
+      nim: validateNim(values.nim),
+      password: validatePassword(values.password),
+    }),
+    [values.nim, values.password],
+  );
+
+  const errors: LoginErrors = useMemo(
+    () => ({
+      nim:
+        touched.nim || submitAttempted || values.nim.length > 0
+          ? allErrors.nim
+          : undefined,
+
+      password:
+        touched.password || submitAttempted || values.password.length > 0
+          ? allErrors.password
+          : undefined,
+    }),
+    [allErrors, touched, submitAttempted, values],
+  );
+
+  const isFormValid = !allErrors.nim && !allErrors.password;
+
+  const setValue = useCallback((field: LoginField, value: string) => {
+    setValues((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setFormError(undefined);
   }, []);
 
-  // Validasi real time: dihitung ulang setiap nilai berubah (sama seperti halaman registrasi).
-  const allErrors = useMemo(() => validateLogin(values), [values]);
-
-  // Hanya tampilkan error untuk field yang sudah disentuh
-  const errors = useMemo<LoginErrors>(() => {
-    const visible: LoginErrors = {};
-    for (const field of ALL_FIELDS) {
-      if (touched[field] && allErrors[field]) visible[field] = allErrors[field];
-    }
-    return visible;
-  }, [allErrors, touched]);
-
-  const setValue = useCallback((field: LoginField, text: string) => {
-    setValues((prev) => ({ ...prev, [field]: text }));
-    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
-    setFormError(''); // pesan "NIM atau password salah" hilang begitu user mengetik ulang
-  }, []);
-
-  /** Dipanggil saat user meninggalkan field (onBlur), mis. field kosong langsung diberi tahu. */
   const blurField = useCallback((field: LoginField) => {
-    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+    setTouched((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
   }, []);
 
-  const submit = useCallback(async (): Promise<LoginSubmitResult> => {
-    if (loading) return { ok: false, errors: {} };
+  const submit = useCallback(async (): Promise<
+    | { ok: true; role: Role }
+    | { ok: false; errors: LoginErrors }
+  > => {
+    setSubmitAttempted(true);
+    setFormError(undefined);
 
-    // Saat submit, semua field dianggap sudah disentuh agar semua error tampil
-    setTouched({ nim: true, password: true });
-
-    const result = validateLogin(values);
-    if (Object.keys(result).length > 0) return { ok: false, errors: result };
-
-    setFormError('');
-    setLoading(true);
-    try {
-      const res = await signIn(values.nim.trim(), values.password);
-      if (!res.ok) {
-        if (mounted.current) {
-          setFormError(res.message);
-          setLoading(false);
-        }
-        return { ok: false, errors: {} };
-      }
-      // Sengaja TIDAK mematikan loading saat sukses: tombol tetap "sibuk" selama navigasi berlangsung.
-      return { ok: true, errors: {}, role: res.role };
-    } catch {
-      if (mounted.current) {
-        setFormError('Login gagal. Periksa NIM dan password Anda.');
-        setLoading(false);
-      }
-      return { ok: false, errors: {} };
+    if (!isFormValid) {
+      return {
+        ok: false,
+        errors: allErrors,
+      };
     }
-  }, [loading, signIn, values]);
 
-  return { values, errors, formError, loading, setValue, blurField, submit };
+    try {
+      setLoading(true);
+
+      const result = await signIn(
+        values.nim.trim(),
+        values.password,
+      );
+
+      if (!result.ok) {
+        setFormError(result.message);
+
+        return {
+          ok: false,
+          errors: {},
+        };
+      }
+
+      return {
+        ok: true,
+        role: result.role,
+      };
+    } catch {
+      setFormError('Terjadi kesalahan. Silakan coba lagi.');
+
+      return {
+        ok: false,
+        errors: {},
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [values, allErrors, isFormValid, signIn]);
+
+  return {
+    values,
+    errors,
+    formError,
+    loading,
+    isFormValid,
+    setValue,
+    blurField,
+    submit,
+  };
 }
