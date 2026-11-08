@@ -1,7 +1,10 @@
 import React, { useCallback } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Colors } from '../../styles/colors';
+import { useAdminData } from '../../context/AdminDataContext';
 import { useAuth } from '../../context/AuthContext';
+import { ErrorBanner } from '../../components/molecules/ErrorBanner';
 import { useTabBarOffset } from '../../hooks/use-tab-bar-offset';
 import { FadeInView } from '../../components/atoms/FadeInView';
 import { AdminHeader, ADMIN_HEADER_OVERLAP } from '../../components/organisms/AdminHeader';
@@ -13,6 +16,15 @@ import { PengajuanTerbaruList } from '../../components/organisms/PengajuanTerbar
 export default function AdminDashboardScreen() {
   const bottomPadding = useTabBarOffset(); // konten tidak tertutup tab bar
   const { session, signOut } = useAuth();
+  const { requestsError, complaintsError, buildingsError, reloadAll } = useAdminData();
+  const loadError = requestsError ?? complaintsError ?? buildingsError;
+
+  // Angka Dashboard bisa berubah dari tab lain (kamar, reservasi, pengaduan) → muat ulang tiap dibuka.
+  useFocusEffect(
+    useCallback(() => {
+      reloadAll();
+    }, [reloadAll]),
+  );
 
   // Setelah signOut, penjaga rute di (admin)/_layout.tsx otomatis mengembalikan ke Login
   const confirmLogout = useCallback(() => {
@@ -41,6 +53,11 @@ export default function AdminDashboardScreen() {
       </FadeInView>
 
       <View style={styles.body}>
+        {loadError ? (
+          <View style={styles.error}>
+            <ErrorBanner title="Sebagian data gagal dimuat" message={loadError} actionLabel="Coba lagi" onPressAction={reloadAll} />
+          </View>
+        ) : null}
         <AdminKpiGrid />
         <PengajuanTerbaruList />
         <HunianPerGedung />
@@ -54,4 +71,5 @@ const styles = StyleSheet.create({
   overscroll: { position: 'absolute', top: -1000, left: 0, right: 0, height: 1000, backgroundColor: Colors.primaryDark },
   summary: { marginTop: -ADMIN_HEADER_OVERLAP, marginHorizontal: 20, zIndex: 2 },
   body: { paddingHorizontal: 20, paddingTop: 26 },
+  error: { marginBottom: 20 },
 });

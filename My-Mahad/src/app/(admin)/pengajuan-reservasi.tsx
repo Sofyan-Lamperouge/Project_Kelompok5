@@ -1,6 +1,10 @@
 import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Colors } from '../../styles/colors';
 import { RequestStatus, REQUEST_STATUS_LABEL } from '../../data/admin-dashboard';
 import { usePengajuanAdmin } from '../../hooks/use-pengajuan-admin';
+import { AppButton } from '../../components/atoms/AppButton';
+import { ErrorBanner } from '../../components/molecules/ErrorBanner';
 import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { EmptyState } from '../../components/molecules/EmptyState';
 import { RequestCard } from '../../components/molecules/RequestCard';
@@ -18,11 +22,33 @@ const EMPTY_MESSAGE: Record<RequestStatus, { title: string; message: string }> =
 };
 
 export default function PengajuanReservasiScreen() {
-  const { filter, setFilter, counts, items, pending, dialogOpen, notice, dismissNotice, approve, reject, cancel, confirm } =
-    usePengajuanAdmin();
+  const {
+    filter, setFilter, counts, items, pending, dialogOpen, notice, dismissNotice, error, dismissError,
+    loading, loadError, reload, approve, reject, cancel, confirm,
+  } = usePengajuanAdmin();
 
   const options = FILTERS.map((key) => ({ key, label: `${REQUEST_STATUS_LABEL[key]} (${counts[key]})` }));
   const approving = pending?.decision === 'disetujui';
+
+  let empty: React.ReactElement;
+  if (loading && items.length === 0) {
+    empty = (
+      <View style={styles.center}>
+        <ActivityIndicator color={Colors.primary} size="large" />
+      </View>
+    );
+  } else if (loadError) {
+    empty = (
+      <View style={styles.center}>
+        <EmptyState iconName="database-alert-outline" title="Gagal memuat pengajuan" message={loadError} />
+        <View style={styles.retry}>
+          <AppButton label="Coba lagi" size="sm" onPress={reload} loading={loading} />
+        </View>
+      </View>
+    );
+  } else {
+    empty = <EmptyState iconName="calendar-check-outline" {...EMPTY_MESSAGE[filter]} />;
+  }
 
   return (
     <>
@@ -32,6 +58,7 @@ export default function PengajuanReservasiScreen() {
         header={
           <>
             <SegmentedTabs<RequestStatus> options={options} value={filter} onChange={setFilter} />
+            {error ? <ErrorBanner title="Gagal menyimpan keputusan" message={error} onClose={dismissError} /> : null}
             {notice ? (
               <FadeInView distance={10} duration={300}>
                 <StatusBanner title={notice.title} message={notice.message} onClose={dismissNotice} />
@@ -42,7 +69,7 @@ export default function PengajuanReservasiScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <RequestCard request={item} onApprove={approve} onReject={reject} />}
-        empty={<EmptyState iconName="calendar-check-outline" {...EMPTY_MESSAGE[filter]} />}
+        empty={empty}
       />
 
       <ConfirmDialog
@@ -64,3 +91,8 @@ export default function PengajuanReservasiScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  center: { paddingVertical: 40, alignItems: 'center' },
+  retry: { marginTop: 16 },
+});

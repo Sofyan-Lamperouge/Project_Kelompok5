@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Complaint, ComplaintStatus } from '../data/complaints';
 import { useAdminData } from '../context/AdminDataContext';
 import { Notice } from './use-pengajuan-admin';
@@ -11,11 +12,20 @@ interface PendingAction {
 }
 
 export function usePengaduanAdmin() {
-  const { complaints, setComplaintStatus } = useAdminData();
+  const { complaints, complaintsLoading, complaintsError, reloadComplaints, setComplaintStatus } = useAdminData();
   const [filter, setFilter] = useState<ComplaintStatus>('baru');
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
+
+  // Muat ulang tiap halaman ini dibuka (laporan baru dari mahasiswa, atau diproses admin lain).
+  useFocusEffect(
+    useCallback(() => {
+      reloadComplaints();
+    }, [reloadComplaints]),
+  );
 
   const counts = useMemo<Record<ComplaintStatus, number>>(
     () => ({
@@ -35,16 +45,26 @@ export function usePengaduanAdmin() {
 
   const cancel = useCallback(() => setDialogOpen(false), []);
 
-  const confirm = useCallback(() => {
-    if (!pending) return;
+  const confirm = useCallback(async () => {
+    if (!pending || busy.current) return;
     const { complaint, action } = pending;
-    setComplaintStatus(complaint.id, action);
-    setNotice({
-      title: action === 'diproses' ? 'Laporan sedang diproses' : 'Laporan selesai ditangani',
-      message: `${complaint.jenis} · ${complaint.lokasi}`,
-    });
+    busy.current = true;
     setDialogOpen(false);
-  }, [pending, setComplaintStatus]);
+    setNotice(null);
+    setError(null);
+    try {
+      await setComplaintStatus(complaint.id, action);
+      setNotice({
+        title: action === 'diproses' ? 'Laporan sedang diproses' : 'Laporan selesai ditangani',
+        message: `${complaint.jenis} · ${complaint.lokasi}`,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal menyimpan perubahan.');
+      reloadComplaints(); // data di layar mungkin sudah usang
+    } finally {
+      busy.current = false;
+    }
+  }, [pending, setComplaintStatus, reloadComplaints]);
 
   return {
     filter,
@@ -55,6 +75,11 @@ export function usePengaduanAdmin() {
     dialogOpen,
     notice,
     dismissNotice: () => setNotice(null),
+    error,
+    dismissError: () => setError(null),
+    loading: complaintsLoading,
+    loadError: complaintsError,
+    reload: reloadComplaints,
     process: (complaint: Complaint) => ask(complaint, 'diproses'),
     finish: (complaint: Complaint) => ask(complaint, 'selesai'),
     cancel,

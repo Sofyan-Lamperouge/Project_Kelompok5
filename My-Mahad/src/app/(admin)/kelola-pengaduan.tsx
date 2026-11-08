@@ -1,6 +1,10 @@
 import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Colors } from '../../styles/colors';
 import { COMPLAINT_STATUS_LABEL, ComplaintStatus } from '../../data/complaints';
 import { usePengaduanAdmin } from '../../hooks/use-pengaduan-admin';
+import { AppButton } from '../../components/atoms/AppButton';
+import { ErrorBanner } from '../../components/molecules/ErrorBanner';
 import { ComplaintCard } from '../../components/molecules/ComplaintCard';
 import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { EmptyState } from '../../components/molecules/EmptyState';
@@ -18,11 +22,33 @@ const EMPTY_MESSAGE: Record<ComplaintStatus, { title: string; message: string }>
 };
 
 export default function KelolaPengaduanScreen() {
-  const { filter, setFilter, counts, items, pending, dialogOpen, notice, dismissNotice, process, finish, cancel, confirm } =
-    usePengaduanAdmin();
+  const {
+    filter, setFilter, counts, items, pending, dialogOpen, notice, dismissNotice, error, dismissError,
+    loading, loadError, reload, process, finish, cancel, confirm,
+  } = usePengaduanAdmin();
 
   const options = FILTERS.map((key) => ({ key, label: `${COMPLAINT_STATUS_LABEL[key]} (${counts[key]})` }));
   const processing = pending?.action === 'diproses';
+
+  let empty: React.ReactElement;
+  if (loading && items.length === 0) {
+    empty = (
+      <View style={styles.center}>
+        <ActivityIndicator color={Colors.primary} size="large" />
+      </View>
+    );
+  } else if (loadError) {
+    empty = (
+      <View style={styles.center}>
+        <EmptyState iconName="database-alert-outline" title="Gagal memuat pengaduan" message={loadError} />
+        <View style={styles.retry}>
+          <AppButton label="Coba lagi" size="sm" onPress={reload} loading={loading} />
+        </View>
+      </View>
+    );
+  } else {
+    empty = <EmptyState iconName="message-check-outline" {...EMPTY_MESSAGE[filter]} />;
+  }
 
   return (
     <>
@@ -32,6 +58,7 @@ export default function KelolaPengaduanScreen() {
         header={
           <>
             <SegmentedTabs<ComplaintStatus> options={options} value={filter} onChange={setFilter} />
+            {error ? <ErrorBanner title="Gagal menyimpan perubahan" message={error} onClose={dismissError} /> : null}
             {notice ? (
               <FadeInView distance={10} duration={300}>
                 <StatusBanner title={notice.title} message={notice.message} onClose={dismissNotice} />
@@ -42,7 +69,7 @@ export default function KelolaPengaduanScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ComplaintCard complaint={item} onProcess={process} onFinish={finish} />}
-        empty={<EmptyState iconName="message-check-outline" {...EMPTY_MESSAGE[filter]} />}
+        empty={empty}
       />
 
       <ConfirmDialog
@@ -63,3 +90,8 @@ export default function KelolaPengaduanScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  center: { paddingVertical: 40, alignItems: 'center' },
+  retry: { marginTop: 16 },
+});

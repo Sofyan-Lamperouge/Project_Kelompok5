@@ -62,7 +62,7 @@ interface BuildingConfig {
   image?: ImageSourcePropType;
 }
 
-function createBuilding({ floors, ...rest }: BuildingConfig): Building {
+export function createBuilding({ floors, ...rest }: BuildingConfig): Building {
   const rooms = floors.flatMap((f) => f.rooms);
   const count = (status: RoomStatus) => rooms.filter((r) => r.status === status).length;
   return {
@@ -126,9 +126,9 @@ export interface OverallStats {
   occupancyPercent: number;
 }
 
-/** Statistik gabungan semua gedung, dihitung dari data kamar. */
-export function getOverallStats(): OverallStats {
-  const sum = (pick: (b: Building) => number) => BUILDINGS.reduce((total, b) => total + pick(b), 0);
+/** Statistik gabungan dari daftar gedung yang diberikan. */
+export function computeOverallStats(buildings: readonly Building[]): OverallStats {
+  const sum = (pick: (b: Building) => number) => buildings.reduce((total, b) => total + pick(b), 0);
   const capacity = sum((b) => b.capacity);
   const occupied = sum((b) => b.occupied);
   return {
@@ -138,4 +138,9 @@ export function getOverallStats(): OverallStats {
     maintenance: sum((b) => b.maintenance),
     occupancyPercent: capacity > 0 ? (occupied / capacity) * 100 : 0,
   };
+}
+
+/** Statistik gabungan semua gedung pada data statis (dipakai halaman yang belum memakai Supabase). */
+export function getOverallStats(): OverallStats {
+  return computeOverallStats(BUILDINGS);
 }

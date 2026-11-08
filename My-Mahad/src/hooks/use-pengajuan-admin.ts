@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { RequestStatus, ReservationRequest } from '../data/admin-dashboard';
 import { useAdminData } from '../context/AdminDataContext';
 
@@ -15,13 +16,22 @@ export interface Notice {
 }
 
 export function usePengajuanAdmin() {
-  const { requests, setRequestStatus } = useAdminData();
+  const { requests, requestsLoading, requestsError, reloadRequests, setRequestStatus } = useAdminData();
   const [filter, setFilter] = useState<RequestStatus>('menunggu');
   const [pending, setPending] = useState<PendingDecision | null>(null);
   // Dialog ditutup lewat `dialogOpen`, bukan dengan mengosongkan `pending`, supaya isi dialog
   // tidak hilang di tengah animasi menutup.
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
+
+  // Muat ulang tiap halaman ini dibuka: status kamar/pengajuan bisa berubah dari tempat lain.
+  useFocusEffect(
+    useCallback(() => {
+      reloadRequests();
+    }, [reloadRequests]),
+  );
 
   const counts = useMemo<Record<RequestStatus, number>>(
     () => ({
@@ -41,16 +51,26 @@ export function usePengajuanAdmin() {
 
   const cancel = useCallback(() => setDialogOpen(false), []);
 
-  const confirm = useCallback(() => {
-    if (!pending) return;
+  const confirm = useCallback(async () => {
+    if (!pending || busy.current) return;
     const { request, decision } = pending;
-    setRequestStatus(request.id, decision);
-    setNotice({
-      title: decision === 'disetujui' ? 'Pengajuan disetujui' : 'Pengajuan ditolak',
-      message: `${request.nama} · ${request.building} · Kamar ${request.room}`,
-    });
+    busy.current = true;
     setDialogOpen(false);
-  }, [pending, setRequestStatus]);
+    setNotice(null);
+    setError(null);
+    try {
+      await setRequestStatus(request.id, decision);
+      setNotice({
+        title: decision === 'disetujui' ? 'Pengajuan disetujui' : 'Pengajuan ditolak',
+        message: `${request.nama} · ${request.building} · Kamar ${request.room}`,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal menyimpan keputusan.');
+      reloadRequests(); // data di layar mungkin sudah usang (mis. sudah diproses / kamar terisi)
+    } finally {
+      busy.current = false;
+    }
+  }, [pending, setRequestStatus, reloadRequests]);
 
   return {
     filter,
@@ -61,6 +81,11 @@ export function usePengajuanAdmin() {
     dialogOpen,
     notice,
     dismissNotice: () => setNotice(null),
+    error,
+    dismissError: () => setError(null),
+    loading: requestsLoading,
+    loadError: requestsError,
+    reload: reloadRequests,
     approve: (request: ReservationRequest) => ask(request, 'disetujui'),
     reject: (request: ReservationRequest) => ask(request, 'ditolak'),
     cancel,

@@ -1,5 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
-import { BUILDINGS, Building, BuildingKey, Floor, Room, RoomStatus, getBuilding } from '../data/buildings';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { Building, BuildingKey, Room, RoomStatus, createBuilding } from '../data/buildings';
+import { fetchBuildings, updateRoomStatus } from '../services/rooms-service';
 
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
   available: 'Kosong',
@@ -7,49 +9,76 @@ export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
   maintenance: 'Maintenance',
 };
 
-/** Perubahan status yang dibuat admin, disimpan per kamar. Kunci: "<gedung>-<nomor kamar>". */
-type StatusOverrides = Partial<Record<string, RoomStatus>>;
-
-const overrideKey = (building: BuildingKey, number: number) => `${building}-${number}`;
-
-/** Terapkan perubahan admin ke data gedung, lalu hitung ulang statistik lantai & gedung. */
-function applyOverrides(building: Building, overrides: StatusOverrides): Building {
-  const floors: Floor[] = building.floors.map((floor) => {
-    const rooms: Room[] = floor.rooms.map((room) => ({
-      ...room,
-      status: overrides[overrideKey(building.key, room.number)] ?? room.status,
-    }));
+/** Ganti status satu kamar lalu hitung ulang statistik lantai & gedung. */
+function withRoomStatus(building: Building, number: number, status: RoomStatus): Building {
+  const floors = building.floors.map((floor) => {
+    if (!floor.rooms.some((r) => r.number === number)) return floor;
+    const rooms = floor.rooms.map((r) => (r.number === number ? { ...r, status } : r));
     return { ...floor, rooms, available: rooms.filter((r) => r.status === 'available').length };
   });
-
-  const all = floors.flatMap((f) => f.rooms);
-  const count = (status: RoomStatus) => all.filter((r) => r.status === status).length;
-  return {
-    ...building,
-    floors,
-    available: count('available'),
-    occupied: count('occupied'),
-    maintenance: count('maintenance'),
-  };
+  return createBuilding({ key: building.key, name: building.name, gender: building.gender, image: building.image, floors });
 }
 
 export function useKelolaKamar() {
-  const [activeKey, setActiveKey] = useState<BuildingKey>(BUILDINGS[0].key);
-  const [level, setLevel] = useState<number>(BUILDINGS[0].floors[0].level);
+  const [buildings, setBuildings] = useState<readonly Building[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [activeKey, setActiveKey] = useState<BuildingKey | null>(null);
+  const [level, setLevel] = useState<number | null>(null);
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [overrides, setOverrides] = useState<StatusOverrides>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const building = useMemo(() => applyOverrides(getBuilding(activeKey), overrides), [activeKey, overrides]);
-  const floor = building.floors.find((f) => f.level === level) ?? building.floors[0];
-  const selectedRoom = floor.rooms.find((r) => r.number === selectedNumber) ?? null;
-
-  const switchBuilding = useCallback((key: BuildingKey) => {
-    setActiveKey(key);
-    setLevel(getBuilding(key).floors[0].level);
-    setSelectedNumber(null);
-    setNotice(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
   }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await fetchBuildings();
+      if (!mounted.current) return;
+      setBuildings(data);
+      // Pertahankan pilihan gedung/lantai bila masih ada; kalau tidak, mulai dari yang pertama.
+      setActiveKey((prev) => (prev && data.some((b) => b.key === prev) ? prev : data[0]?.key ?? null));
+      setLevel((prev) => prev ?? data[0]?.floors[0]?.level ?? null);
+    } catch (e) {
+      if (mounted.current) setLoadError(e instanceof Error ? e.message : 'Gagal memuat data kamar.');
+    } finally {
+      if (mounted.current) setLoading(false);
+    }
+  }, []);
+
+  // Muat ulang tiap layar dibuka: menyetujui reservasi mengubah kamar menjadi "terisi".
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const building = useMemo(
+    () => buildings.find((b) => b.key === activeKey) ?? buildings[0] ?? null,
+    [buildings, activeKey],
+  );
+  const floor = building ? building.floors.find((f) => f.level === level) ?? building.floors[0] ?? null : null;
+  const selectedRoom = floor?.rooms.find((r) => r.number === selectedNumber) ?? null;
+
+  const switchBuilding = useCallback(
+    (key: BuildingKey) => {
+      setActiveKey(key);
+      setLevel(buildings.find((b) => b.key === key)?.floors[0]?.level ?? null);
+      setSelectedNumber(null);
+      setNotice(null);
+      setSaveError(null);
+    },
+    [buildings],
+  );
 
   const selectFloor = useCallback((next: number) => {
     setLevel(next);
@@ -59,26 +88,46 @@ export function useKelolaKamar() {
   /** Ketuk kamar untuk memilih; ketuk lagi untuk membatalkan pilihan. */
   const toggleRoom = useCallback((room: Room) => {
     setNotice(null);
+    setSaveError(null);
     setSelectedNumber((prev) => (prev === room.number ? null : room.number));
   }, []);
 
+  /** Optimistic update: tampilan langsung berubah, dikembalikan bila Supabase menolak. */
   const changeStatus = useCallback(
-    (status: RoomStatus) => {
-      if (!selectedRoom || selectedRoom.status === status) return;
-      // TODO: ganti dengan request ubah status kamar ke backend
-      setOverrides((prev) => ({ ...prev, [overrideKey(activeKey, selectedRoom.number)]: status }));
-      setNotice(`Kamar ${selectedRoom.number} · ${building.name} kini berstatus ${ROOM_STATUS_LABEL[status]}`);
+    async (status: RoomStatus) => {
+      if (!building || !selectedRoom || selectedRoom.status === status) return;
+      const { key: buildingKey, name: buildingName } = building;
+      const { number, status: previous } = selectedRoom;
+
+      setNotice(null);
+      setSaveError(null);
+      setBuildings((prev) => prev.map((b) => (b.key === buildingKey ? withRoomStatus(b, number, status) : b)));
+
+      try {
+        await updateRoomStatus(buildingKey, number, status);
+        if (mounted.current) setNotice(`Kamar ${number} · ${buildingName} kini berstatus ${ROOM_STATUS_LABEL[status]}`);
+      } catch (e) {
+        if (!mounted.current) return;
+        setBuildings((prev) => prev.map((b) => (b.key === buildingKey ? withRoomStatus(b, number, previous) : b)));
+        setSaveError(e instanceof Error ? e.message : 'Gagal menyimpan perubahan.');
+      }
     },
-    [activeKey, building.name, selectedRoom],
+    [building, selectedRoom],
   );
 
   return {
+    buildings,
     building,
     floor,
+    loading,
+    loadError,
+    reload: load,
     selectedNumber,
     selectedRoom,
     notice,
     dismissNotice: () => setNotice(null),
+    saveError,
+    dismissSaveError: () => setSaveError(null),
     switchBuilding,
     selectFloor,
     toggleRoom,
