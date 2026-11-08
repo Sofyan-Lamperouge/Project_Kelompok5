@@ -80,25 +80,7 @@
 
 <img src="dokumentasi\Registrasi.gif" width="50%" >
 
-## Laporan Revisian UTS ##
+## Laporan Revisian Fitus di UTS ##
 1. Ashfahani Hasyim => melakukan perbaikan di halaman edit profil, bagian NIM menjadi primary key
 
-<img src="dokumentasi\update-profile.png" width="50%" >
-
-2. Mohammad Sofyan Nurseha (Menambahkan role admin dan dashboard admin)
-
-<img src="dokumentasi\dashboard-admin.gif" width="50%" >
-
-<<<<<<< HEAD
-3. Nisa Naila (Melakukan Perbaikan Login dan Pengaduan)
-=======
-3. Nisa Naila  (Revisi Login dan Pengaduan)
->>>>>>> fa253081fc24cf32ed742089b4e5319b3028224e
-
-<img src="dokumentasi/revisi-login.gif" width="50%" >
-
-<img src="dokumentasi/revisi-pengaduan.gif" width="50%" >
-
-4. Faiz Alfaresi (Revisi menambahkan validitas registrasi)
-
-<img src="dokumentasi/revisi-login.gif" width="50%" >
+![alt text](image.png)
