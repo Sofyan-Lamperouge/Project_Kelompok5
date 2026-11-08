@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export const MIN_PASSWORD = 8;
 
@@ -42,6 +43,7 @@ export interface SubmitResult {
 }
 
 export function useRegisterForm() {
+  const { signUp } = useAuth();
   const [values, setValues] = useState<RegisterValues>(EMPTY_VALUES);
   // Field yang sudah diketik / ditinggalkan user → hanya field ini yang menampilkan error
   const [touched, setTouched] = useState<TouchedFields>({});
@@ -95,8 +97,16 @@ export function useRegisterForm() {
     setFormError('');
     setLoading(true);
     try {
-      // TODO: ganti dengan request ke backend saat API sudah tersedia
-      await new Promise<void>((resolve) => setTimeout(resolve, 1200));
+      const res = await signUp({
+        nama: values.nama,
+        nim: values.nim,
+        email: values.email,
+        password: values.password,
+      });
+      if (!res.ok) {
+        if (mounted.current) setFormError(res.message);
+        return { ok: false, errors: {} };
+      }
       if (mounted.current) setSuccess(true);
       return { ok: true, errors: {} };
     } catch {
@@ -105,7 +115,7 @@ export function useRegisterForm() {
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [loading, success, values]);
+  }, [loading, success, values, signUp]);
 
   return { values, errors, formError, loading, success, setValue, blurField, submit };
 }

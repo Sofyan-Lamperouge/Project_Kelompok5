@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
+import { useAuth } from '../../context/AuthContext';
 import { useTabBarOffset } from '../../hooks/use-tab-bar-offset';
 import { FadeInView } from '../../components/atoms/FadeInView';
 import { HeroBanner } from '../../components/molecules/HeroBanner';
@@ -11,6 +12,7 @@ import { KapasitasGedungRow } from '../../components/organisms/KapasitasGedungRo
 
 export default function BerandaScreen() {
   const router = useRouter();
+  const { session } = useAuth();
   const bottomPadding = useTabBarOffset();
 
   return (
@@ -23,7 +25,7 @@ export default function BerandaScreen() {
       <View style={styles.overscroll} />
 
       <FadeInView distance={-16} duration={500}>
-        <BerandaHeader />
+        <BerandaHeader name={session?.nama} nim={session?.nim} />
       </FadeInView>
 
       {/* Banner menumpuk ke atas header */}

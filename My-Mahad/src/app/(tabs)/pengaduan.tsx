@@ -14,7 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../styles/colors';
-import type { Complaint } from '../../data/complaints';
+import { createComplaint } from '../../services/complaints-service';
 
 // ==========================================================
 // DATA JENIS FASILITAS
@@ -22,7 +22,7 @@ import type { Complaint } from '../../data/complaints';
 const JENIS_BARANG = [
   { label: 'Lampu', icon: 'bulb-outline' },
   { label: 'Tempat Tidur', icon: 'bed-outline' },
-  { label: 'Pintu', icon: 'door-open-outline' },
+  { label: 'Pintu', icon: 'enter-outline' },
   { label: 'Jendela', icon: 'window-outline' },
   { label: 'Meja Belajar', icon: 'desktop-outline' },
   { label: 'Stop Kontak', icon: 'flash-outline' },
@@ -32,9 +32,6 @@ const JENIS_BARANG = [
 
 const LAINNYA_LABEL = 'Lainnya';
 const MAX_DESKRIPSI = 200;
-
-const generateId = () =>
-  `PGD-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
 // ==========================================================
 // SCREEN PENGADUAN
@@ -139,26 +136,16 @@ export default function PengaduanScreen() {
         ? jenisBarangLainnya.trim()
         : jenisBarang;
 
-    const newComplaint: Complaint = {
-      id: generateId(),
-      jenis: jenisFinal,
-      lokasi: lokasi.trim(),
-      deskripsi: deskripsi.trim(),
-      foto,
-      status: 'baru',
-      tanggal: new Date().toISOString(),
-      pelapor: 'Saya',
-    };
-
     try {
       setLoading(true);
 
-      // SIMULASI PROSES PENGIRIMAN
-      await new Promise<void>((resolve) =>
-        setTimeout(resolve, 1500)
-      );
-
-      console.log('Data pengaduan:', newComplaint);
+      // Simpan ke Supabase (nama & NIM pelapor diisi server dari akun yang login).
+      // Catatan: foto belum diunggah — butuh Supabase Storage (lihat langkah berikutnya).
+      await createComplaint({
+        jenis: jenisFinal,
+        lokasi: lokasi.trim(),
+        deskripsi: deskripsi.trim(),
+      });
 
       Alert.alert(
         'Pengaduan Berhasil!',
@@ -180,10 +167,12 @@ export default function PengaduanScreen() {
           },
         ]
       );
-    } catch {
+    } catch (e) {
       Alert.alert(
         'Gagal',
-        'Pengaduan gagal diproses. Silakan coba lagi.'
+        e instanceof Error && e.message
+          ? e.message
+          : 'Pengaduan gagal diproses. Silakan coba lagi.'
       );
     } finally {
       setLoading(false);
