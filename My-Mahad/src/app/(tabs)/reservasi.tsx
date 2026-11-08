@@ -1,9 +1,10 @@
-import React, { useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
-import { BUILDINGS, BuildingKey } from '../../data/buildings';
+import { BuildingKey } from '../../data/buildings';
+import { AppText } from '../../components/atoms/AppText';
 import { useReservasi } from '../../hooks/use-reservasi';
 import { useTabBarHeight } from '../../hooks/use-tab-bar-offset';
 import { FadeInView } from '../../components/atoms/FadeInView';
@@ -16,8 +17,6 @@ import { ReservasiActionBar } from '../../components/organisms/ReservasiActionBa
 
 /** Ruang untuk bar aksi (tombol + ringkasan) di atas tab bar. */
 const ACTION_BAR_SPACE = 128;
-
-const TAB_OPTIONS = BUILDINGS.map((b) => ({ key: b.key, label: b.name }));
 
 export default function ReservasiScreen() {
   const router = useRouter();
@@ -34,12 +33,23 @@ export default function ReservasiScreen() {
     pendingNumbers,
     submitting,
     submittedLabel,
+    loading,
+    loadError,
+    reload,
+    submitError,
+    buildings,
     dismissSubmitted,
     switchBuilding,
     selectFloor,
     toggleRoom,
     submit,
   } = useReservasi();
+
+  const tabOptions = useMemo(() => buildings.map((b) => ({ key: b.key, label: b.name })), [buildings]);
+
+  useEffect(() => {
+    if (submitError) Alert.alert('Pengajuan gagal', submitError);
+  }, [submitError]);
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -73,8 +83,19 @@ export default function ReservasiScreen() {
           <ScreenHeader title="Reservasi Kamar" align="left" onBack={goBack} />
         </FadeInView>
 
+        {loading && !building ? (
+          <ActivityIndicator style={styles.state} color={Colors.primary} />
+        ) : !building || !floor ? (
+          <View style={styles.state}>
+            <AppText style={styles.stateText}>{loadError ?? 'Data gedung belum tersedia.'}</AppText>
+            <Pressable onPress={reload} hitSlop={10} accessibilityRole="button">
+              <AppText weight="bold" style={styles.stateLink}>Coba lagi</AppText>
+            </Pressable>
+          </View>
+        ) : (
+          <>
         <FadeInView delay={100} style={styles.tabs}>
-          <SegmentedTabs<BuildingKey> options={TAB_OPTIONS} value={building.key} onChange={switchBuilding} />
+          <SegmentedTabs<BuildingKey> options={tabOptions} value={building.key} onChange={switchBuilding} />
         </FadeInView>
 
         {submittedLabel ? (
@@ -101,6 +122,8 @@ export default function ReservasiScreen() {
             <BuildingMiniCard building={other} onPress={() => switchBuilding(other.key)} />
           </FadeInView>
         ))}
+          </>
+        )}
       </ScrollView>
 
       <ReservasiActionBar
@@ -119,4 +142,7 @@ const styles = StyleSheet.create({
   tabs: { marginTop: 18 },
   banner: { marginTop: 14 },
   section: { marginTop: 14 },
+  state: { marginTop: 60, alignItems: 'center', gap: 10 },
+  stateText: { textAlign: 'center' },
+  stateLink: { color: Colors.primary },
 });
