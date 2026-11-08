@@ -39,3 +39,22 @@ export async function decideReservation(id: string, decision: Exclude<RequestSta
   const { error } = await supabase.rpc('decide_reservation', { p_id: id, p_decision: decision });
   if (error) throw new Error(error.message);
 }
+
+/** Mahasiswa mengajukan satu kamar. nama & NIM diisi server dari profil akun. */
+export async function createReservation(buildingKey: string, roomNumber: number): Promise<void> {
+  const { error } = await supabase.rpc('create_reservation', {
+    p_building_key: buildingKey,
+    p_room_number: roomNumber,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** Kamar yang masih diajukan (status "menunggu") oleh user yang sedang login. RLS membatasi ke milik sendiri. */
+export async function fetchMyPendingRooms(): Promise<{ building_key: string; room_number: number }[]> {
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('building_key, room_number')
+    .eq('status', 'menunggu');
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}

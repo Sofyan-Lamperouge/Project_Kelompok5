@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BUILDINGS, Building, BuildingKey, Floor, Room, floorLabel, getBuilding } from '../data/buildings';
+import { Building, BuildingKey, Floor, Room, floorLabel } from '../data/buildings';
+import { fetchBuildings } from '../services/rooms-service';
+import { createReservation, fetchMyPendingRooms } from '../services/reservations-service';
 
-type PendingMap = Record<BuildingKey, readonly number[]>;
+type PendingMap = Record<string, readonly number[]>;
 
 export function useReservasi() {
-  const [activeKey, setActiveKey] = useState<BuildingKey>(BUILDINGS[0].key);
+  /** Gedung + kamar dari Supabase. */
+  const [buildings, setBuildings] = useState<readonly Building[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [activeKey, setActiveKey] = useState<BuildingKey | null>(null);
   /** Lantai yang sedang ditampilkan. */
-  const [level, setLevel] = useState<number>(BUILDINGS[0].floors[0].level);
+  const [level, setLevel] = useState<number | null>(null);
   /** Nomor kamar yang dipilih (bisa berada di lantai mana pun pada gedung aktif). */
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  /** Kamar yang sudah diajukan di sesi ini → tidak bisa dipilih lagi sampai data dimuat ulang dari server. */
-  const [pending, setPending] = useState<PendingMap>({ jadid: [], qodim: [] });
+  /** Kamar yang sudah diajukan user (status "menunggu") → tidak bisa dipilih lagi. Dimuat dari server. */
+  const [pending, setPending] = useState<PendingMap>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   /** Ringkasan pengajuan terakhir yang berhasil, mis. "Gedung Jadid · Lantai 2 · Kamar 203". */
   const [submittedLabel, setSubmittedLabel] = useState<string | null>(null);
 
@@ -23,13 +31,43 @@ export function useReservasi() {
     };
   }, []);
 
-  const building: Building = getBuilding(activeKey);
-  const otherBuildings = BUILDINGS.filter((b) => b.key !== activeKey);
-  const floor: Floor = building.floors.find((f) => f.level === level) ?? building.floors[0];
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [data, mine] = await Promise.all([fetchBuildings(), fetchMyPendingRooms()]);
+      if (!mounted.current) return;
+      setBuildings(data);
+      const map: Record<string, number[]> = {};
+      for (const r of mine) (map[r.building_key] ??= []).push(r.room_number);
+      setPending(map);
+      setActiveKey((prev) => (prev && data.some((b) => b.key === prev) ? prev : data[0]?.key ?? null));
+      setLevel((prev) => prev ?? data[0]?.floors[0]?.level ?? null);
+    } catch (e) {
+      if (mounted.current) setLoadError(e instanceof Error ? e.message : 'Gagal memuat data kamar.');
+    } finally {
+      if (mounted.current) setLoading(false);
+    }
+  }, []);
 
-  const pendingNumbers = useMemo(() => new Set(pending[activeKey]), [pending, activeKey]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const building: Building | null = useMemo(
+    () => buildings.find((b) => b.key === activeKey) ?? buildings[0] ?? null,
+    [buildings, activeKey],
+  );
+  const otherBuildings = buildings.filter((b) => b.key !== building?.key);
+  const floor: Floor | null = building ? building.floors.find((f) => f.level === level) ?? building.floors[0] ?? null : null;
+
+  const pendingNumbers = useMemo(
+    () => new Set(building ? pending[building.key] ?? [] : []),
+    [pending, building],
+  );
 
   const selection = useMemo(() => {
+    if (!building) return null;
     for (const f of building.floors) {
       const room = f.rooms.find((r) => r.number === selectedNumber);
       if (room) return { room, floor: f };
@@ -37,16 +75,21 @@ export function useReservasi() {
     return null;
   }, [building, selectedNumber]);
 
-  const selectionLabel = selection
-    ? `${building.name} · ${floorLabel(selection.floor.level)} · Kamar ${selection.room.number}`
-    : null;
+  const selectionLabel =
+    building && selection
+      ? `${building.name} · ${floorLabel(selection.floor.level)} · Kamar ${selection.room.number}`
+      : null;
 
-  const switchBuilding = useCallback((key: BuildingKey) => {
-    setActiveKey(key);
-    setLevel(getBuilding(key).floors[0].level);
-    setSelectedNumber(null); // pilihan milik gedung sebelumnya tidak berlaku lagi
-    setSubmittedLabel(null);
-  }, []);
+  const switchBuilding = useCallback(
+    (key: BuildingKey) => {
+      setActiveKey(key);
+      setLevel(buildings.find((b) => b.key === key)?.floors[0]?.level ?? null);
+      setSelectedNumber(null); // pilihan milik gedung sebelumnya tidak berlaku lagi
+      setSubmittedLabel(null);
+      setSubmitError(null);
+    },
+    [buildings],
+  );
 
   const selectFloor = useCallback((next: number) => setLevel(next), []);
 
@@ -55,28 +98,34 @@ export function useReservasi() {
     (room: Room) => {
       if (room.status !== 'available' || pendingNumbers.has(room.number)) return;
       setSubmittedLabel(null);
+      setSubmitError(null);
       setSelectedNumber((prev) => (prev === room.number ? null : room.number));
     },
     [pendingNumbers],
   );
 
   const submit = useCallback(async () => {
-    if (!selection || !selectionLabel || submitting) return;
+    if (!building || !selection || !selectionLabel || submitting) return;
     const number = selection.room.number;
-    const key = activeKey;
+    const key = building.key;
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      // TODO: ganti dengan request pengajuan reservasi ke backend
-      await new Promise<void>((resolve) => setTimeout(resolve, 1200));
+      await createReservation(key, number);
       if (mounted.current) {
-        setPending((prev) => ({ ...prev, [key]: [...prev[key], number] }));
+        setPending((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), number] }));
         setSubmittedLabel(selectionLabel);
         setSelectedNumber(null);
+      }
+    } catch (e) {
+      if (mounted.current) {
+        setSubmitError(e instanceof Error ? e.message : 'Pengajuan gagal. Coba lagi.');
+        load(); // status kamar mungkin sudah berubah (diambil orang lain)
       }
     } finally {
       if (mounted.current) setSubmitting(false);
     }
-  }, [activeKey, selection, selectionLabel, submitting]);
+  }, [building, selection, selectionLabel, submitting, load]);
 
   return {
     building,
@@ -89,6 +138,11 @@ export function useReservasi() {
     pendingNumbers,
     submitting,
     submittedLabel,
+    loading,
+    loadError,
+    reload: load,
+    submitError,
+    buildings,
     dismissSubmitted: () => setSubmittedLabel(null),
     switchBuilding,
     selectFloor,
