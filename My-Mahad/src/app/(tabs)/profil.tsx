@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TouchableOpacity, StyleSheet, FlatList, 
-  Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image 
+  Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfilScreen() {
   const router = useRouter();
 
-  // Data User
-  const [nama, setNama] = useState('Ahmad Fauzan');
-  const [nim, setNim] = useState('2301010012');
-  const [password, setPassword] = useState('password123');
+  // Data User dari Supabase (tabel profiles) lewat AuthContext
+  const { session, signOut, updateNama, changePassword } = useAuth();
+  const nama = session?.nama ?? '';
+  const nim = session?.nim ?? '';
   const [fotoProfil, setFotoProfil] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // State Modal Edit & Password
   const [modalEditVisible, setModalEditVisible] = useState(false);
-  const [tempNama, setTempNama] = useState(nama);
+  const [tempNama, setTempNama] = useState('');
 
   const [modalPassVisible, setModalPassVisible] = useState(false);
   const [passLama, setPassLama] = useState('');
@@ -59,24 +61,41 @@ export default function ProfilScreen() {
   };
 
   // Fungsi Simpan Data
-  const handleSaveProfil = () => {
-    setNama(tempNama);
+  const handleSaveProfil = async () => {
+    if (saving) return;
+    setSaving(true);
+    const res = await updateNama(tempNama);
+    setSaving(false);
+    if (!res.ok) return Alert.alert("Error", res.message);
     setModalEditVisible(false);
     Alert.alert("Berhasil", "Profil diperbarui!");
   };
 
-  const handleSavePassword = () => {
-    if (passLama !== password) return Alert.alert("Error", "Password lama salah!");
-    if (passBaru.length < 6) return Alert.alert("Error", "Minimal 6 karakter!");
-    setPassword(passBaru);
+  const handleSavePassword = async () => {
+    if (saving) return;
+    if (!passLama || !passBaru) return Alert.alert("Error", "Semua field wajib diisi.");
+    setSaving(true);
+    const res = await changePassword(passLama, passBaru);
+    setSaving(false);
+    if (!res.ok) return Alert.alert("Error", res.message);
     setModalPassVisible(false);
     setPassLama(''); setPassBaru('');
     Alert.alert("Berhasil", "Password diubah!");
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    router.replace('/login');
+  };
+
+  const openEditModal = () => {
+    setTempNama(nama);
+    setModalEditVisible(true);
+  };
+
   // Data Menu
   const MENU_ITEMS = [
-    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: () => setModalEditVisible(true) },
+    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: openEditModal },
     { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
   ];
 
@@ -118,7 +137,7 @@ export default function ProfilScreen() {
                 {fotoProfil ? (
                   <Image source={{ uri: fotoProfil }} style={styles.avatarImage} />
                 ) : (
-                  <Text style={styles.avatarText}>{nama.substring(0, 2).toUpperCase()}</Text>
+                  <Text style={styles.avatarText}>{nama.substring(0, 2).toUpperCase() || '?'}</Text>
                 )}
               </TouchableOpacity>
 
@@ -146,7 +165,7 @@ export default function ProfilScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/login')}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
@@ -205,8 +224,8 @@ export default function ProfilScreen() {
               <Text style={styles.readOnlyText}>{nim}</Text>
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfil}>
-              <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
+            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSaveProfil} disabled={saving}>
+              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Perubahan</Text>}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -226,8 +245,8 @@ export default function ProfilScreen() {
             <TextInput style={styles.input} secureTextEntry value={passLama} onChangeText={setPassLama} />
             <Text style={styles.label}>Password Baru</Text>
             <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} />
-            <TouchableOpacity style={styles.saveButton} onPress={handleSavePassword}>
-              <Text style={styles.saveButtonText}>Simpan Password</Text>
+            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSavePassword} disabled={saving}>
+              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Password</Text>}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
