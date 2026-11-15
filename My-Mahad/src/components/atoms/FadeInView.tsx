@@ -19,7 +19,7 @@ export function FadeInView({ delay = 0, duration = 600, distance = 24, style, ch
       duration,
       delay,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      
     }).start();
   }, [progress, delay, duration]);
 
