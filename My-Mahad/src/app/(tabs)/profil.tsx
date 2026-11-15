@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TouchableOpacity, StyleSheet, FlatList, 
   Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator
@@ -6,17 +6,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase'; // Pastikan path ini benar
 
 export default function ProfilScreen() {
   const router = useRouter();
 
-  // Data User dari Supabase (tabel profiles) lewat AuthContext
-  const { session, signOut, updateNama, changePassword } = useAuth();
-  const nama = session?.nama ?? '';
-  const nim = session?.nim ?? '';
+  // Data User (Mulai dengan string kosong, akan diisi dari Supabase)
+  const [nama, setNama] = useState('');
+  const [nim, setNim] = useState('');
   const [fotoProfil, setFotoProfil] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // State Modal Edit & Password
   const [modalEditVisible, setModalEditVisible] = useState(false);
@@ -29,7 +28,38 @@ export default function ProfilScreen() {
   // State Modal Lihat Foto
   const [modalFotoVisible, setModalFotoVisible] = useState(false);
 
-  // Fungsi Pilih Foto
+  // --- 1. AMBIL DATA DARI SUPABASE SAAT HALAMAN DIBUKA ---
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('nama, nim')
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
+          setNama(data.nama);
+          setNim(data.nim);
+          setTempNama(data.nama);
+        }
+        if (error) console.log("Error fetch:", error.message);
+      }
+    } catch (error) {
+      console.log("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- FUNGSI PILIH FOTO ---
   const pickImage = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,48 +84,62 @@ export default function ProfilScreen() {
     }
   };
 
-  // Fungsi Hapus Foto
   const hapusFoto = () => {
     setFotoProfil(null);
     setModalFotoVisible(false);
   };
 
-  // Fungsi Simpan Data
+  // --- 2. SIMPAN PERUBAHAN PROFIL KE SUPABASE ---
   const handleSaveProfil = async () => {
-    if (saving) return;
-    setSaving(true);
-    const res = await updateNama(tempNama);
-    setSaving(false);
-    if (!res.ok) return Alert.alert("Error", res.message);
-    setModalEditVisible(false);
-    Alert.alert("Berhasil", "Profil diperbarui!");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Update nama di tabel profiles
+      const { error } = await supabase
+        .from('profiles')
+        .update({ nama: tempNama })
+        .eq('id', user.id);
+
+      if (error) {
+        Alert.alert("Gagal", error.message);
+        return;
+      }
+
+      setNama(tempNama); // Update UI
+      setModalEditVisible(false);
+      Alert.alert("Berhasil", "Profil berhasil diperbarui di database!");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
+  // --- 3. SIMPAN PASSWORD BARU KE SUPABASE AUTH ---
   const handleSavePassword = async () => {
-    if (saving) return;
-    if (!passLama || !passBaru) return Alert.alert("Error", "Semua field wajib diisi.");
-    setSaving(true);
-    const res = await changePassword(passLama, passBaru);
-    setSaving(false);
-    if (!res.ok) return Alert.alert("Error", res.message);
-    setModalPassVisible(false);
-    setPassLama(''); setPassBaru('');
-    Alert.alert("Berhasil", "Password diubah!");
-  };
+    if (passBaru.length < 6) {
+      return Alert.alert("Error", "Password baru minimal 6 karakter!");
+    }
 
-  const handleLogout = async () => {
-    await signOut();
-    router.replace('/login');
-  };
+    try {
+      // Update password menggunakan Supabase Auth
+      const { error } = await supabase.auth.updateUser({ password: passBaru });
 
-  const openEditModal = () => {
-    setTempNama(nama);
-    setModalEditVisible(true);
+      if (error) {
+        Alert.alert("Gagal", error.message);
+      } else {
+        setModalPassVisible(false);
+        setPassLama(''); 
+        setPassBaru('');
+        Alert.alert("Berhasil", "Password berhasil diubah!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   // Data Menu
   const MENU_ITEMS = [
-    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: openEditModal },
+    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: () => setModalEditVisible(true) },
     { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
   ];
 
@@ -111,6 +155,16 @@ export default function ProfilScreen() {
       <Ionicons name="chevron-forward" size={18} color="#1E293B" />
     </TouchableOpacity>
   );
+
+  // Tampilkan Loading jika data belum siap
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+        <ActivityIndicator size="large" color="#0A704A" />
+        <Text style={{ marginTop: 10, color: '#64748B' }}>Memuat profil...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -137,7 +191,9 @@ export default function ProfilScreen() {
                 {fotoProfil ? (
                   <Image source={{ uri: fotoProfil }} style={styles.avatarImage} />
                 ) : (
-                  <Text style={styles.avatarText}>{nama.substring(0, 2).toUpperCase() || '?'}</Text>
+                  <Text style={styles.avatarText}>
+                    {nama ? nama.substring(0, 2).toUpperCase() : '??'}
+                  </Text>
                 )}
               </TouchableOpacity>
 
@@ -146,9 +202,8 @@ export default function ProfilScreen() {
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.profileName}>{nama}</Text>
-            {/* Jarak NIM dan Card diberi marginBottom yang cukup */}
-            <Text style={styles.profileNim}>NIM {nim}</Text>
+            <Text style={styles.profileName}>{nama || 'Nama Belum Diisi'}</Text>
+            <Text style={styles.profileNim}>NIM {nim || '-'}</Text>
           </View>
         </View>
 
@@ -165,12 +220,17 @@ export default function ProfilScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={async () => {
+              await supabase.auth.signOut(); // Logout dari Supabase
+              router.replace('/login');
+            }}
+          >
             <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
 
-          {/* LOGO MASJID DITATA RAPI DI BAWAH */}
           <View style={styles.mosqueIllustration}>
              <Image 
                 source={require('../../../assets/images/logo-masjid.png')} 
@@ -180,7 +240,7 @@ export default function ProfilScreen() {
 
         </View>
       
-      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI */}
+      {/* MODAL LIHAT FOTO FULL */}
       <Modal visible={modalFotoVisible} transparent={true} animationType="fade">
         <View style={styles.fullImageContainer}>
           <TouchableOpacity style={styles.closeImageButton} onPress={() => setModalFotoVisible(false)}>
@@ -224,8 +284,8 @@ export default function ProfilScreen() {
               <Text style={styles.readOnlyText}>{nim}</Text>
             </View>
 
-            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSaveProfil} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Perubahan</Text>}
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfil}>
+              <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -241,12 +301,12 @@ export default function ProfilScreen() {
                 <Ionicons name="close" size={24} color="#1E293B" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.label}>Password Lama</Text>
-            <TextInput style={styles.input} secureTextEntry value={passLama} onChangeText={setPassLama} />
+            
             <Text style={styles.label}>Password Baru</Text>
-            <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} />
-            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSavePassword} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Password</Text>}
+            <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} placeholder="Masukkan password baru" />
+            
+            <TouchableOpacity style={styles.saveButton} onPress={handleSavePassword}>
+              <Text style={styles.saveButtonText}>Simpan Password</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -347,7 +407,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', 
     fontSize: 14, 
     opacity: 0.9, 
-    marginBottom: 25, // DIBERI CELAH 25 agar tidak mepet dengan card
+    marginBottom: 25,
     textShadowColor: 'rgba(0, 0, 0, 0.4)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -388,20 +448,18 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   
-  // --- LOGO MASJID DITATA DI BAWAH ---
   mosqueIllustration: { 
     flex: 1, 
-    justifyContent: 'center', // Posisi di tengah sisa ruang
+    justifyContent: 'center', 
     alignItems: 'center', 
     marginTop: 20,
-    paddingBottom: 80, // Jarak aman dari tab bar bawah
+    paddingBottom: 80, 
   },
   mosqueImage: { 
     width: 150, 
     height: 150, 
-    opacity: 0.15, // Dibuat transparan elegan
+    opacity: 0.15, 
     resizeMode: 'contain' 
-    // tintColor dihapus agar gambar asli muncul
   },
 
   // --- MODAL STYLES ---
