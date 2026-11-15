@@ -3,16 +3,26 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../styles/colors';
+import { GoogleResult } from '../../context/AuthContext';
 import { AppText } from '../../components/atoms/AppText';
 import { FadeInView } from '../../components/atoms/FadeInView';
 import { BrandLogo } from '../../components/molecules/BrandLogo';
 import { ScreenHeader } from '../../components/molecules/ScreenHeader';
 import { AuthBackdrop } from '../../components/organisms/AuthBackdrop';
 import { RegisterForm } from '../../components/organisms/RegisterForm';
+import { GoogleAuthSection } from '../../components/organisms/GoogleAuthSection';
 
 export default function RegisterScreen() {
   const router = useRouter();
 
+  // Daftar lewat Google: akun baru → lengkapi NIM & nama dulu; akun lama → langsung masuk.
+  const handleGoogle = useCallback(
+    (result: Extract<GoogleResult, { ok: true }>) => {
+      if (result.status === 'needs-profile') router.replace('/(auth)/lengkapi-data');
+      else router.replace(result.role === 'admin' ? '/(admin)/dashboard' : '/(tabs)/beranda');
+    },
+    [router],
+  );
   const goToLogin = useCallback(() => router.replace('/(auth)/login'), [router]);
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -39,6 +49,10 @@ export default function RegisterScreen() {
           </FadeInView>
 
           <RegisterForm onSuccess={goToLogin} />
+
+          <FadeInView delay={700}>
+            <GoogleAuthSection label="Daftar dengan Google" onResult={handleGoogle} />
+          </FadeInView>
 
           <FadeInView delay={750} style={styles.footer}>
             <AppText variant="caption" style={styles.footerText}>Sudah punya akun?</AppText>

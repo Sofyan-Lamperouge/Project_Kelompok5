@@ -12,7 +12,7 @@ export default function ProfilScreen() {
   const router = useRouter();
 
   // Data User dari Supabase (tabel profiles) lewat AuthContext
-  const { session, signOut, updateNama, changePassword } = useAuth();
+  const { session, signOut, updateNama, changePassword, hasPassword } = useAuth();
   const nama = session?.nama ?? '';
   const nim = session?.nim ?? '';
   const [fotoProfil, setFotoProfil] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export default function ProfilScreen() {
   const MENU_ITEMS = [
     { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: openEditModal },
     { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
-  ];
+  ].filter((item) => item.id !== '2' || hasPassword); // akun Google-only tidak punya password
 
   const renderMenuItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.menuItem} onPress={item.action}>
