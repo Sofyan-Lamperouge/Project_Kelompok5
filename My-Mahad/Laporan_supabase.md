@@ -33,3 +33,6 @@
 3. Login dan Reservasi Kamar
 
 <img src="dokumentasi\supaLogin.gif" width="50%" >
+
+4. Profile (membuat korelasi halaman Profil yang sudah terintegrasi secara real-time dengan database Supabase)
+![alt text](image.png)
