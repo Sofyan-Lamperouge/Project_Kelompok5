@@ -54,10 +54,16 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   }, [success, onSuccess]);
 
   const runShake = useCallback(() => {
-    Animated.sequence(
-      [10, -10, 8, -8, 4, 0].map((toValue) => Animated.timing(shake, { toValue, duration: 55, useNativeDriver: true })),
+  Animated.sequence(
+      [10, -10, 8, -8, 4, 0].map((toValue) =>
+        Animated.timing(shake, {
+          toValue,
+          duration: 55,
+          useNativeDriver: Platform.OS !== 'web',
+        })
+      ),
     ).start();
-  }, [shake]);
+  }, [shake]);  
 
   const handleSubmit = useCallback(async () => {
     const result = await submit();

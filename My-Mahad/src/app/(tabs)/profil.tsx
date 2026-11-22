@@ -6,14 +6,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../lib/supabase'; // Pastikan path ini benar
+// Sesuaikan path import ini dengan lokasi AuthContext Anda
+import { useAuth } from '../../context/AuthContext'; 
 
 export default function ProfilScreen() {
   const router = useRouter();
+  
+  // Mengambil data dan fungsi dari AuthContext
+  const { session, signOut, updateNama, changePassword, hasPassword } = useAuth();
+  const nama = session?.nama ?? '';
+  const nim = session?.nim ?? '';
 
-  // Data User (Mulai dengan string kosong, akan diisi dari Supabase)
-  const [nama, setNama] = useState('');
-  const [nim, setNim] = useState('');
+  // State Lokal
   const [fotoProfil, setFotoProfil] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,36 +32,16 @@ export default function ProfilScreen() {
   // State Modal Lihat Foto
   const [modalFotoVisible, setModalFotoVisible] = useState(false);
 
-  // --- 1. AMBIL DATA DARI SUPABASE SAAT HALAMAN DIBUKA ---
+  // Mengisi tempNama saat data session tersedia
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('nama, nim')
-          .eq('id', user.id)
-          .single();
-
-        if (data) {
-          setNama(data.nama);
-          setNim(data.nim);
-          setTempNama(data.nama);
-        }
-        if (error) console.log("Error fetch:", error.message);
-      }
-    } catch (error) {
-      console.log("Error:", error);
-    } finally {
+    if (nama) {
+      setTempNama(nama);
+      setLoading(false); 
+    } else {
+      // Jika session kosong (misal belum login), matikan loading
       setLoading(false);
     }
-  };
+  }, [nama]);
 
   // --- FUNGSI PILIH FOTO ---
   const pickImage = async () => {
@@ -89,51 +73,43 @@ export default function ProfilScreen() {
     setModalFotoVisible(false);
   };
 
-  // --- 2. SIMPAN PERUBAHAN PROFIL KE SUPABASE ---
+  // --- 2. SIMPAN PERUBAHAN PROFIL ---
   const handleSaveProfil = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Update nama di tabel profiles
-      const { error } = await supabase
-        .from('profiles')
-        .update({ nama: tempNama })
-        .eq('id', user.id);
-
-      if (error) {
-        Alert.alert("Gagal", error.message);
-        return;
+      const result = await updateNama(tempNama);
+      
+      if (result.ok) {
+        setModalEditVisible(false);
+        Alert.alert("Berhasil", "Profil berhasil diperbarui!");
+      } else {
+        Alert.alert("Gagal", result.message);
       }
-
-      setNama(tempNama); // Update UI
-      setModalEditVisible(false);
-      Alert.alert("Berhasil", "Profil berhasil diperbarui di database!");
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      Alert.alert("Gagal", error.message || "Terjadi kesalahan saat menyimpan profil.");
     }
   };
 
-  // --- 3. SIMPAN PASSWORD BARU KE SUPABASE AUTH ---
+  // --- 3. SIMPAN PASSWORD BARU ---
   const handleSavePassword = async () => {
-    if (passBaru.length < 6) {
-      return Alert.alert("Error", "Password baru minimal 6 karakter!");
+    // Sesuai validasi di AuthContext (minimal 8 karakter)
+    if (passBaru.length < 8) {
+      return Alert.alert("Error", "Password baru minimal 8 karakter!");
     }
 
     try {
-      // Update password menggunakan Supabase Auth
-      const { error } = await supabase.auth.updateUser({ password: passBaru });
-
-      if (error) {
-        Alert.alert("Gagal", error.message);
-      } else {
+      // Memanggil fungsi changePassword dengan 2 parameter (lama dan baru)
+      const result = await changePassword(passLama, passBaru);
+      
+      if (result.ok) {
         setModalPassVisible(false);
         setPassLama(''); 
         setPassBaru('');
         Alert.alert("Berhasil", "Password berhasil diubah!");
+      } else {
+        Alert.alert("Gagal", result.message);
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      Alert.alert("Gagal", error.message || "Terjadi kesalahan saat mengubah password.");
     }
   };
 
@@ -141,7 +117,7 @@ export default function ProfilScreen() {
   const MENU_ITEMS = [
     { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: () => setModalEditVisible(true) },
     { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
-  ];
+  ].filter((item) => item.id !== '2' || hasPassword); // Filter jika akun Google-only tidak punya password
 
   const renderMenuItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.menuItem} onPress={item.action}>
@@ -223,7 +199,7 @@ export default function ProfilScreen() {
           <TouchableOpacity 
             style={styles.logoutButton} 
             onPress={async () => {
-              await supabase.auth.signOut(); // Logout dari Supabase
+              await signOut(); // Menggunakan fungsi dari AuthContext
               router.replace('/login');
             }}
           >
@@ -302,8 +278,24 @@ export default function ProfilScreen() {
               </TouchableOpacity>
             </View>
             
+            {/* Tambahan Input Password Lama */}
+            <Text style={styles.label}>Password Lama</Text>
+            <TextInput 
+              style={styles.input} 
+              secureTextEntry 
+              value={passLama} 
+              onChangeText={setPassLama} 
+              placeholder="Masukkan password lama" 
+            />
+
             <Text style={styles.label}>Password Baru</Text>
-            <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} placeholder="Masukkan password baru" />
+            <TextInput 
+              style={styles.input} 
+              secureTextEntry 
+              value={passBaru} 
+              onChangeText={setPassBaru} 
+              placeholder="Masukkan password baru (min. 8 karakter)" 
+            />
             
             <TouchableOpacity style={styles.saveButton} onPress={handleSavePassword}>
               <Text style={styles.saveButtonText}>Simpan Password</Text>

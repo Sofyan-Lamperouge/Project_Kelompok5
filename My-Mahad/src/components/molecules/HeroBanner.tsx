@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, ImageSourcePropType, Platform, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Gradients } from '../../styles/colors';
 import { Radius, Shadow } from '../../styles/tokens';
@@ -23,7 +23,12 @@ export function HeroBanner({ onPress, imageSource = DEFAULT_IMAGE }: HeroBannerP
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(float, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(float, {
+          toValue: 1,
+          duration: 1700,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
         Animated.timing(float, { toValue: 0, duration: 1700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ]),
     );
