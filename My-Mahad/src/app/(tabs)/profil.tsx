@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TouchableOpacity, StyleSheet, FlatList, 
   Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator
@@ -6,17 +6,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '../../context/AuthContext';
+// Sesuaikan path import ini dengan lokasi AuthContext Anda
+import { useAuth } from '../../context/AuthContext'; 
 
 export default function ProfilScreen() {
   const router = useRouter();
-
-  // Data User dari Supabase (tabel profiles) lewat AuthContext
+  
+  // Mengambil data dan fungsi dari AuthContext
   const { session, signOut, updateNama, changePassword, hasPassword } = useAuth();
   const nama = session?.nama ?? '';
   const nim = session?.nim ?? '';
+
+  // State Lokal
   const [fotoProfil, setFotoProfil] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // State Modal Edit & Password
   const [modalEditVisible, setModalEditVisible] = useState(false);
@@ -29,7 +32,18 @@ export default function ProfilScreen() {
   // State Modal Lihat Foto
   const [modalFotoVisible, setModalFotoVisible] = useState(false);
 
-  // Fungsi Pilih Foto
+  // Mengisi tempNama saat data session tersedia
+  useEffect(() => {
+    if (nama) {
+      setTempNama(nama);
+      setLoading(false); 
+    } else {
+      // Jika session kosong (misal belum login), matikan loading
+      setLoading(false);
+    }
+  }, [nama]);
+
+  // --- FUNGSI PILIH FOTO ---
   const pickImage = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,50 +68,56 @@ export default function ProfilScreen() {
     }
   };
 
-  // Fungsi Hapus Foto
   const hapusFoto = () => {
     setFotoProfil(null);
     setModalFotoVisible(false);
   };
 
-  // Fungsi Simpan Data
+  // --- 2. SIMPAN PERUBAHAN PROFIL ---
   const handleSaveProfil = async () => {
-    if (saving) return;
-    setSaving(true);
-    const res = await updateNama(tempNama);
-    setSaving(false);
-    if (!res.ok) return Alert.alert("Error", res.message);
-    setModalEditVisible(false);
-    Alert.alert("Berhasil", "Profil diperbarui!");
+    try {
+      const result = await updateNama(tempNama);
+      
+      if (result.ok) {
+        setModalEditVisible(false);
+        Alert.alert("Berhasil", "Profil berhasil diperbarui!");
+      } else {
+        Alert.alert("Gagal", result.message);
+      }
+    } catch (error: any) {
+      Alert.alert("Gagal", error.message || "Terjadi kesalahan saat menyimpan profil.");
+    }
   };
 
+  // --- 3. SIMPAN PASSWORD BARU ---
   const handleSavePassword = async () => {
-    if (saving) return;
-    if (!passLama || !passBaru) return Alert.alert("Error", "Semua field wajib diisi.");
-    setSaving(true);
-    const res = await changePassword(passLama, passBaru);
-    setSaving(false);
-    if (!res.ok) return Alert.alert("Error", res.message);
-    setModalPassVisible(false);
-    setPassLama(''); setPassBaru('');
-    Alert.alert("Berhasil", "Password diubah!");
-  };
+    // Sesuai validasi di AuthContext (minimal 8 karakter)
+    if (passBaru.length < 8) {
+      return Alert.alert("Error", "Password baru minimal 8 karakter!");
+    }
 
-  const handleLogout = async () => {
-    await signOut();
-    router.replace('/login');
-  };
-
-  const openEditModal = () => {
-    setTempNama(nama);
-    setModalEditVisible(true);
+    try {
+      // Memanggil fungsi changePassword dengan 2 parameter (lama dan baru)
+      const result = await changePassword(passLama, passBaru);
+      
+      if (result.ok) {
+        setModalPassVisible(false);
+        setPassLama(''); 
+        setPassBaru('');
+        Alert.alert("Berhasil", "Password berhasil diubah!");
+      } else {
+        Alert.alert("Gagal", result.message);
+      }
+    } catch (error: any) {
+      Alert.alert("Gagal", error.message || "Terjadi kesalahan saat mengubah password.");
+    }
   };
 
   // Data Menu
   const MENU_ITEMS = [
-    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: openEditModal },
+    { id: '1', title: 'Edit Profil', subtitle: 'Ubah data diri Anda', icon: 'person-outline', action: () => setModalEditVisible(true) },
     { id: '2', title: 'Ubah Password', subtitle: 'Ganti password akun', icon: 'lock-closed-outline', action: () => setModalPassVisible(true) },
-  ].filter((item) => item.id !== '2' || hasPassword); // akun Google-only tidak punya password
+  ].filter((item) => item.id !== '2' || hasPassword); // Filter jika akun Google-only tidak punya password
 
   const renderMenuItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.menuItem} onPress={item.action}>
@@ -111,6 +131,16 @@ export default function ProfilScreen() {
       <Ionicons name="chevron-forward" size={18} color="#1E293B" />
     </TouchableOpacity>
   );
+
+  // Tampilkan Loading jika data belum siap
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+        <ActivityIndicator size="large" color="#0A704A" />
+        <Text style={{ marginTop: 10, color: '#64748B' }}>Memuat profil...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -137,7 +167,9 @@ export default function ProfilScreen() {
                 {fotoProfil ? (
                   <Image source={{ uri: fotoProfil }} style={styles.avatarImage} />
                 ) : (
-                  <Text style={styles.avatarText}>{nama.substring(0, 2).toUpperCase() || '?'}</Text>
+                  <Text style={styles.avatarText}>
+                    {nama ? nama.substring(0, 2).toUpperCase() : '??'}
+                  </Text>
                 )}
               </TouchableOpacity>
 
@@ -146,9 +178,8 @@ export default function ProfilScreen() {
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.profileName}>{nama}</Text>
-            {/* Jarak NIM dan Card diberi marginBottom yang cukup */}
-            <Text style={styles.profileNim}>NIM {nim}</Text>
+            <Text style={styles.profileName}>{nama || 'Nama Belum Diisi'}</Text>
+            <Text style={styles.profileNim}>NIM {nim || '-'}</Text>
           </View>
         </View>
 
@@ -165,12 +196,17 @@ export default function ProfilScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={async () => {
+              await signOut(); // Menggunakan fungsi dari AuthContext
+              router.replace('/login');
+            }}
+          >
             <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={styles.logoutText}>Keluar</Text>
           </TouchableOpacity>
 
-          {/* LOGO MASJID DITATA RAPI DI BAWAH */}
           <View style={styles.mosqueIllustration}>
              <Image 
                 source={require('../../../assets/images/logo-masjid.png')} 
@@ -180,7 +216,7 @@ export default function ProfilScreen() {
 
         </View>
       
-      {/* MODAL LIHAT FOTO FULL & MENU HAPUS/GANTI */}
+      {/* MODAL LIHAT FOTO FULL */}
       <Modal visible={modalFotoVisible} transparent={true} animationType="fade">
         <View style={styles.fullImageContainer}>
           <TouchableOpacity style={styles.closeImageButton} onPress={() => setModalFotoVisible(false)}>
@@ -224,8 +260,8 @@ export default function ProfilScreen() {
               <Text style={styles.readOnlyText}>{nim}</Text>
             </View>
 
-            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSaveProfil} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Perubahan</Text>}
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfil}>
+              <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -241,12 +277,28 @@ export default function ProfilScreen() {
                 <Ionicons name="close" size={24} color="#1E293B" />
               </TouchableOpacity>
             </View>
+            
+            {/* Tambahan Input Password Lama */}
             <Text style={styles.label}>Password Lama</Text>
-            <TextInput style={styles.input} secureTextEntry value={passLama} onChangeText={setPassLama} />
+            <TextInput 
+              style={styles.input} 
+              secureTextEntry 
+              value={passLama} 
+              onChangeText={setPassLama} 
+              placeholder="Masukkan password lama" 
+            />
+
             <Text style={styles.label}>Password Baru</Text>
-            <TextInput style={styles.input} secureTextEntry value={passBaru} onChangeText={setPassBaru} />
-            <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSavePassword} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Simpan Password</Text>}
+            <TextInput 
+              style={styles.input} 
+              secureTextEntry 
+              value={passBaru} 
+              onChangeText={setPassBaru} 
+              placeholder="Masukkan password baru (min. 8 karakter)" 
+            />
+            
+            <TouchableOpacity style={styles.saveButton} onPress={handleSavePassword}>
+              <Text style={styles.saveButtonText}>Simpan Password</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -347,7 +399,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', 
     fontSize: 14, 
     opacity: 0.9, 
-    marginBottom: 25, // DIBERI CELAH 25 agar tidak mepet dengan card
+    marginBottom: 25,
     textShadowColor: 'rgba(0, 0, 0, 0.4)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -388,20 +440,18 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   
-  // --- LOGO MASJID DITATA DI BAWAH ---
   mosqueIllustration: { 
     flex: 1, 
-    justifyContent: 'center', // Posisi di tengah sisa ruang
+    justifyContent: 'center', 
     alignItems: 'center', 
     marginTop: 20,
-    paddingBottom: 80, // Jarak aman dari tab bar bawah
+    paddingBottom: 80, 
   },
   mosqueImage: { 
     width: 150, 
     height: 150, 
-    opacity: 0.15, // Dibuat transparan elegan
+    opacity: 0.15, 
     resizeMode: 'contain' 
-    // tintColor dihapus agar gambar asli muncul
   },
 
   // --- MODAL STYLES ---

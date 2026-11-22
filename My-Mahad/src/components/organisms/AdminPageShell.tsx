@@ -12,11 +12,6 @@ interface AdminPageShellProps {
   children?: React.ReactNode;
 }
 
-/**
- * Kerangka halaman admin bertab untuk konten biasa: judul + isi yang bisa di-scroll, dengan jarak
- * atas (status bar) dan bawah (tab bar) yang sudah dihitung.
- * Untuk DAFTAR panjang gunakan AdminListShell (FlatList), jangan menaruh FlatList di dalam shell ini.
- */
 export function AdminPageShell({ title, subtitle, children }: AdminPageShellProps) {
   const insets = useSafeAreaInsets();
   const bottomPadding = useTabBarOffset();
@@ -26,6 +21,8 @@ export function AdminPageShell({ title, subtitle, children }: AdminPageShellProp
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: bottomPadding }]}
       showsVerticalScrollIndicator={false}
+      // TAMBAHKAN INI UNTUK MEMPERBAIKI KLIK PADA CARD
+      keyboardShouldPersistTaps="handled"
     >
       <AdminPageHeader title={title} subtitle={subtitle} />
       <FadeInView delay={120} style={styles.body}>
