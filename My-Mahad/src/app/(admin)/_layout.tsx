@@ -10,14 +10,12 @@ import { TabBarIcon } from '../../components/molecules/TabBarIcon';
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 interface TabItem {
-  /** Harus sama dengan nama file di app/(admin)/. */
   name: string;
   title: string;
   active: IoniconName;
   inactive: IoniconName;
 }
 
-// Menambah tab baru cukup menambah satu baris di sini + satu file halaman.
 const TAB_ITEMS: readonly TabItem[] = [
   { name: 'dashboard', title: 'Dashboard', active: 'grid', inactive: 'grid-outline' },
   { name: 'pengajuan-reservasi', title: 'Reservasi', active: 'calendar', inactive: 'calendar-outline' },
@@ -25,18 +23,16 @@ const TAB_ITEMS: readonly TabItem[] = [
   { name: 'kelola-pengaduan', title: 'Pengaduan', active: 'chatbubble-ellipses', inactive: 'chatbubble-ellipses-outline' },
 ];
 
-// Hanya Dashboard yang punya header hijau (ikon status bar putih); halaman lain berlatar terang.
 const LIGHT_STATUS_BAR_ROUTES = ['dashboard'];
 
-/**
- * Tab navigasi admin + penjaga rute. CATATAN: penjaga ini hanya pengaman di sisi aplikasi
- * (supaya pengguna biasa tidak melihat halaman admin). Pembatasan data yang sebenarnya
- * WAJIB dilakukan di backend.
- */
 export default function AdminLayout() {
-  const { session } = useAuth();
-  const screenOptions = useGlassTabOptions(); // hook harus dipanggil sebelum return bersyarat
+  const { session, loading } = useAuth();
+  const screenOptions = useGlassTabOptions();
 
+  // Tunggu Supabase selesai memulihkan session sebelum memutuskan redirect
+  if (loading) return null;
+
+  // Jika bukan admin, kembalikan ke halaman login
   if (session?.role !== 'admin') return <Redirect href="/(auth)/login" />;
 
   return (
@@ -44,7 +40,8 @@ export default function AdminLayout() {
       <Tabs
         screenOptions={screenOptions}
         screenListeners={({ route }) => ({
-          focus: () => setStatusBarStyle(LIGHT_STATUS_BAR_ROUTES.includes(route.name) ? 'light' : 'dark'),
+          focus: () =>
+            setStatusBarStyle(LIGHT_STATUS_BAR_ROUTES.includes(route.name) ? 'light' : 'dark'),
         })}
       >
         {TAB_ITEMS.map((item) => (
@@ -54,11 +51,26 @@ export default function AdminLayout() {
             options={{
               title: item.title,
               tabBarIcon: ({ focused, color, size }) => (
-                <TabBarIcon active={item.active} inactive={item.inactive} focused={focused} color={color} size={size} />
+                <TabBarIcon
+                  active={item.active}
+                  inactive={item.inactive}
+                  focused={focused}
+                  color={color}
+                  size={size}
+                />
               ),
             }}
           />
         ))}
+
+        {/* Disembunyikan dari tab bar, tetap bisa dibuka lewat router.push */}
+        <Tabs.Screen
+          name="rekap-absensi"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
       </Tabs>
     </AdminDataProvider>
   );
