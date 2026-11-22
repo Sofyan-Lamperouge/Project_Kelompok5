@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, ViewProps } from 'react-native';
+import { Animated, Easing, Platform, ViewProps } from 'react-native';
 
 interface FadeInViewProps extends ViewProps {
   /** Jeda sebelum animasi mulai (ms) — dipakai untuk efek stagger. */
@@ -19,7 +19,7 @@ export function FadeInView({ delay = 0, duration = 600, distance = 24, style, ch
       duration,
       delay,
       easing: Easing.out(Easing.cubic),
-      
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   }, [progress, delay, duration]);
 

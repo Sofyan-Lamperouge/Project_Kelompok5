@@ -11,12 +11,12 @@ interface ServiceItem {
   subtitle: string;
   iconName: IconName;
   /** Kosongkan jika halaman tujuan belum tersedia. */
-  href?: '/reservasi' | '/pengaduan';
+  href?: '/reservasi' | '/pengaduan' | '/absen';
 }
 
 const SERVICES: readonly ServiceItem[] = [
   { key: 'kamar', title: 'Pilih Kamar', subtitle: 'Lihat ketersediaan kamar', iconName: 'account', href: '/reservasi' },
-  { key: 'absensi', title: 'Absensi', subtitle: 'Absen kegiatan asrama', iconName: 'clipboard-check-outline' },
+  { key: 'absensi', title: 'Absensi', subtitle: 'Absen kegiatan asrama', iconName: 'clipboard-check-outline', href: '/absen' },
   { key: 'pengaduan', title: 'Pengaduan', subtitle: 'Laporkan fasilitas yang bermasalah', iconName: 'message-alert-outline', href: '/pengaduan' },
   { key: 'tutor', title: 'Info Tutor', subtitle: 'Informasi pembimbing dan jadwal', iconName: 'account-tie' },
 ];
